@@ -77,6 +77,23 @@ describe("validateRelativePath", () => {
 		segs.push("file.txt");
 		expect(validateRelativePath(segs.join("/")).ok).toBe(true);
 	});
+
+	it("rejects a right-to-left override character", () => {
+		expect(validateRelativePath("report\u202Efdp.exe").ok).toBe(false);
+	});
+
+	it("rejects a left-to-right override character", () => {
+		expect(validateRelativePath("file\u202Dname.txt").ok).toBe(false);
+	});
+
+	it("rejects a zero-width space", () => {
+		expect(validateRelativePath("file\u200Bname.txt").ok).toBe(false);
+	});
+
+	it("accepts normal unicode in filenames", () => {
+		expect(validateRelativePath("café.txt").ok).toBe(true);
+		expect(validateRelativePath("日本語/ファイル.pdf").ok).toBe(true);
+	});
 });
 
 describe("shouldSkipBasename", () => {

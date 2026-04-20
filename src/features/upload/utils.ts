@@ -32,6 +32,10 @@ export function validateRelativePath(raw: string): ValidationResult {
 	if (/^[A-Za-z]:/.test(p))
 		return { ok: false, reason: "Path has a drive prefix." };
 
+	// Bidi overrides and zero-width characters can disguise file extensions.
+	if (/[\u200B-\u200D\u202A-\u202E\u2066-\u2069\uFEFF]/.test(p))
+		return { ok: false, reason: "Path contains a prohibited Unicode character." };
+
 	for (let i = 0; i < p.length; i++) {
 		const code = p.charCodeAt(i);
 		if (code < 0x20)

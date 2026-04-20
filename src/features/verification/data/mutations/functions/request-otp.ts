@@ -59,7 +59,7 @@ export const requestOtp = createServerFn({ method: "POST" })
 			const { error: emailError } = await resend.emails.send({
 				from: fromEmail,
 				to: email,
-				subject: `Your verification code: ${otp}`,
+				subject: "Your Omnidrop verification code",
 				react: OtpEmail({ code: otp }),
 			});
 

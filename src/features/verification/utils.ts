@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { jwtVerify, SignJWT } from "jose";
 import type { UploadTokenClaims } from "#/features/verification/types";
 
@@ -41,7 +42,7 @@ export async function verifyOtp(
 	const submittedHash = Array.from(new Uint8Array(buffer))
 		.map((b) => b.toString(16).padStart(2, "0"))
 		.join("");
-	return submittedHash === expectedHash;
+	return timingSafeEqual(Buffer.from(submittedHash), Buffer.from(expectedHash));
 }
 
 // --- Upload token (JWT) ---

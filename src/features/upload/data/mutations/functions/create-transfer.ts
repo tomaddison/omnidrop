@@ -12,38 +12,49 @@ import { createServiceClient } from "../../../../../../supabase/utils/server";
 
 const PRESIGNED_POST_TTL_SECONDS = 15 * 60;
 
-const schema = z.object({
-	token: z.string(),
-	turnstileToken: z.string().min(1),
-	mode: z.enum(["link", "email"]),
-	expiryDays: z.number().int().min(1).max(7),
-	recipientEmail: z.string().email().optional(),
-	title: z.string().max(200).optional(),
-	message: z.string().max(1000).optional(),
-	files: z
-		.array(
-			z.object({
-				name: z.string().min(1).max(500),
-				relativePath: z.string().superRefine((val, ctx) => {
-					const result = validateRelativePath(val);
-					if (!result.ok) {
-						ctx.addIssue({ code: "custom", message: result.reason });
-					}
+export const schema = z
+	.object({
+		token: z.string(),
+		turnstileToken: z.string().min(1),
+		mode: z.enum(["link", "email"]),
+		expiryDays: z.number().int().min(1).max(7),
+		recipientEmail: z.string().email().optional(),
+		title: z.string().max(200).optional(),
+		message: z.string().max(1000).optional(),
+		files: z
+			.array(
+				z.object({
+					name: z.string().min(1).max(500),
+					relativePath: z.string().superRefine((val, ctx) => {
+						const result = validateRelativePath(val);
+						if (!result.ok) {
+							ctx.addIssue({ code: "custom", message: result.reason });
+						}
+					}),
+					size: z.number().int().nonnegative(),
 				}),
-				size: z.number().int().nonnegative(),
+			)
+			.min(1)
+			.max(250)
+			.superRefine((files, ctx) => {
+				const total = files.reduce((sum, f) => sum + f.size, 0);
+				if (total > MAX_TOTAL_BYTES) {
+					ctx.addIssue({
+						code: "custom",
+						message: "Transfer exceeds 2GB limit.",
+					});
+				}
 			}),
-		)
-		.min(1)
-		.superRefine((files, ctx) => {
-			const total = files.reduce((sum, f) => sum + f.size, 0);
-			if (total > MAX_TOTAL_BYTES) {
-				ctx.addIssue({
-					code: "custom",
-					message: "Transfer exceeds 2GB limit.",
-				});
-			}
-		}),
-});
+	})
+	.superRefine((data, ctx) => {
+		if (data.mode === "email" && !data.recipientEmail) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["recipientEmail"],
+				message: "Recipient email is required for email mode transfers.",
+			});
+		}
+	});
 
 const s3 = new S3Client({
 	region: process.env.AWS_REGION ?? "eu-west-2",

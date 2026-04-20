@@ -39,13 +39,22 @@ export const finalizeTransferFn = createServerFn({ method: "POST" })
 			Date.now() + data.expiryDays * 86_400_000,
 		).toISOString();
 
-		const { error: updateError } = await supabase
+		// Conditional update: only transitions uploading → ready.
+		// If the row is already ready/expired/failed, 0 rows are returned and we
+		// skip re-sending the notification email (idempotent, no expiry reset).
+		const { data: updated, error: updateError } = await supabase
 			.from("transfers")
 			.update({ status: "ready", expires_at: expiresAt })
-			.eq("id", data.transferId);
+			.eq("id", data.transferId)
+			.eq("status", "uploading")
+			.select("id");
 
 		if (updateError) {
 			throw new Error("Failed to finalize transfer.");
+		}
+
+		if (!updated || updated.length === 0) {
+			return { success: true as const };
 		}
 
 		if (transfer.mode === "email" && transfer.recipient_email) {

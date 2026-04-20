@@ -32,6 +32,24 @@ describe("verifyTurnstileToken", () => {
 		expect(await verifyTurnstileToken("any-token", "1.2.3.4")).toBe(true);
 	});
 
+	it("throws in production when TURNSTILE_SECRET_KEY is unset", async () => {
+		delete process.env.TURNSTILE_SECRET_KEY;
+		process.env.NODE_ENV = "production";
+		await expect(verifyTurnstileToken("any-token", "1.2.3.4")).rejects.toThrow(
+			/TURNSTILE_SECRET_KEY must be set in production/,
+		);
+		process.env.NODE_ENV = "test";
+	});
+
+	it("throws in production when secret is set to 'dev'", async () => {
+		process.env.TURNSTILE_SECRET_KEY = "dev";
+		process.env.NODE_ENV = "production";
+		await expect(verifyTurnstileToken("any-token", "1.2.3.4")).rejects.toThrow(
+			/TURNSTILE_SECRET_KEY must be set in production/,
+		);
+		process.env.NODE_ENV = "test";
+	});
+
 	it("returns true when Cloudflare responds success:true", async () => {
 		globalThis.fetch = vi.fn(
 			async () =>

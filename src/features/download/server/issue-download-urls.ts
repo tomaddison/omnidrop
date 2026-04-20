@@ -4,10 +4,11 @@ import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { applyGuards } from "#/features/security/server/guard";
 import { createServiceClient } from "../../../../supabase/utils/server";
 
 const schema = z.object({
-	slug: z.string().min(1),
+	slug: z.string().min(1).max(64),
 });
 
 const s3 = new S3Client({
@@ -26,6 +27,13 @@ const s3 = new S3Client({
 export const issueDownloadUrlsFn = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) => schema.parse(data))
 	.handler(async ({ data }) => {
+		await applyGuards(data, {
+			turnstile: false,
+			rateLimits: (d, { ip }) => [
+				{ bucket: `download:slug:${d.slug}:ip:${ip}`, limit: 20, windowSeconds: 600 },
+			],
+		});
+
 		const supabase = createServiceClient();
 
 		const { data: transfer, error } = await supabase
@@ -48,6 +56,7 @@ export const issueDownloadUrlsFn = createServerFn({ method: "POST" })
 					Bucket: process.env.S3_BUCKET ?? "ht-transfers",
 					Key: file.s3_key,
 					ResponseContentDisposition: `attachment; filename="${encodeURIComponent(file.relative_path)}"`,
+					ResponseContentType: "application/octet-stream",
 				});
 				// 5-minute TTL: long enough for the browser to begin every file in a
 				// multi-download batch, short enough that a leaked link decays fast.

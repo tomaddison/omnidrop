@@ -13,15 +13,15 @@ A file sharing app built with TanStack Start, Supabase, and AWS S3. Send up to 2
 
 ## Stack
 
-| Layer | Tech |
-|---|---|
-| Framework | TanStack Start (React 19, Vite) |
-| UI | Base UI + shadcn, Tailwind CSS 4 |
-| Database | Supabase (Postgres, RLS, declarative schema, pg_cron) |
-| Storage | AWS S3 with transfer acceleration |
-| Email | Resend + React Email |
-| Infra | Terraform (S3 + IAM), LocalStack for dev |
-| Hosting | Vercel |
+| Layer     | Tech                                                  |
+| --------- | ----------------------------------------------------- |
+| Framework | TanStack Start (React 19, Vite)                       |
+| UI        | Base UI + shadcn, Tailwind CSS 4                      |
+| Database  | Supabase (Postgres, RLS, declarative schema, pg_cron) |
+| Storage   | AWS S3 with transfer acceleration                     |
+| Email     | Resend + React Email                                  |
+| Infra     | Terraform (S3 + IAM), LocalStack for dev              |
+| Hosting   | Vercel                                                |
 
 ## Getting started
 

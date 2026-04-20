@@ -4,7 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createServiceClient } from "../../../../supabase/utils/server";
 
-const schema = z.object({ slug: z.string().min(1) });
+const schema = z.object({ slug: z.string().min(1).max(64) });
 
 export const getTransferFn = createServerFn({ method: "GET" })
 	.inputValidator((data: unknown) => schema.parse(data))
@@ -14,7 +14,7 @@ export const getTransferFn = createServerFn({ method: "GET" })
 		const { data: transfer, error } = await supabase
 			.from("transfers")
 			.select(
-				"id, slug, title, message, sender_email, expires_at, status, password_hash, transfer_files(id, relative_path, file_size)",
+				"id, slug, title, message, sender_email, expires_at, status, transfer_files(id, relative_path, file_size)",
 			)
 			.eq("slug", data.slug)
 			.single();
@@ -32,7 +32,6 @@ export const getTransferFn = createServerFn({ method: "GET" })
 			message: transfer.message,
 			senderEmail: transfer.sender_email,
 			expiresAt: transfer.expires_at,
-			hasPassword: transfer.password_hash !== null,
 			files: transfer.transfer_files.map((f) => ({
 				id: f.id,
 				name: f.relative_path,

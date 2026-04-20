@@ -24,6 +24,10 @@ const UNKNOWN_IP = "unknown";
 // createIsomorphicFn strips the server implementation (and its
 // @tanstack/react-start/server import) from the client bundle, so this file
 // remains safe to pull transitively from client code via "use server" modules.
+//
+// xForwardedFor: Vercel's edge network strips and re-sets X-Forwarded-For
+// before requests reach the origin, so trusting it here is safe on Vercel.
+// If the deployment platform ever changes, re-evaluate this flag.
 export const extractIp = createIsomorphicFn()
 	.client(() => UNKNOWN_IP)
 	.server(() => getRequestIP({ xForwardedFor: true }) ?? UNKNOWN_IP);
@@ -36,7 +40,12 @@ export async function verifyTurnstileToken(
 
 	// Dev bypass: without a Turnstile secret configured the widget is not wired
 	// up either; skipping verification lets local dev continue to work.
-	if (!secret || secret === "dev") return true;
+	if (!secret || secret === "dev") {
+		if (process.env.NODE_ENV === "production") {
+			throw new Error("TURNSTILE_SECRET_KEY must be set in production.");
+		}
+		return true;
+	}
 
 	const body = new URLSearchParams({
 		secret,

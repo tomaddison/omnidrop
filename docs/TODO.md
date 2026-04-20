@@ -4,7 +4,7 @@ Planned work, loosely ordered by priority. Not a commitment.
 
 ## Near-term
 
-- Password-protected downloads (schema already has `password_hash`; UI + verify flow missing).
+- Password-protected downloads (`password_hash` column exists in the DB; needs server-side enforcement in `issueDownloadUrlsFn` before the field is exposed to the client).
 - Resumable uploads for flaky connections. S3 multipart with client-side chunk tracking.
 - Per-file progress in addition to the overall progress ring.
 - Toast notifications for background cleanup failures (currently silent).

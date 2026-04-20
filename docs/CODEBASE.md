@@ -53,7 +53,7 @@ Features do not import from each other's internals. If two features need the sam
 
 ## Security posture
 
-Every user-facing server function is wrapped in `guarded()` from `features/security/server/guard.ts`. The wrapper performs Cloudflare Turnstile verification and per-bucket rate limiting (by IP and/or email) using a Postgres-backed `check_and_record_rate_limit` RPC.
+Mutating server functions call `applyGuards()` from `features/security/server/guard.ts`, which performs Cloudflare Turnstile verification and per-bucket rate limiting (by IP and/or email) using a Postgres-backed `check_and_record_rate_limit` RPC. Read-only download endpoints skip Turnstile but are still rate-limited.
 
 S3 uploads use presigned POST with a `content-length-range` condition so the client cannot exceed the declared size. A bucket policy rejects anything over 2 GiB as a second line of defence.
 

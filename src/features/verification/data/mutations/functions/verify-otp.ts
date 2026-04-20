@@ -48,7 +48,11 @@ export const verifyOtpFn = createServerFn({ method: "POST" })
 			await supabase
 				.from("email_verifications")
 				.update({ attempts: nextAttempts, used: burn })
-				.eq("id", row.id);
+				.eq("id", row.id)
+				.eq("used", false);
+
+			// Add latency to slow rapid sequential brute-force attempts.
+			await new Promise((r) => setTimeout(r, 500));
 
 			if (burn) {
 				throw new Error(
@@ -58,10 +62,18 @@ export const verifyOtpFn = createServerFn({ method: "POST" })
 			throw new Error("Incorrect code. Please try again.");
 		}
 
-		await supabase
+		// Atomic claim: UPDATE only succeeds if the row is still unused.
+		// If two concurrent requests both pass verifyOtp(), only one wins here.
+		const { data: claimed } = await supabase
 			.from("email_verifications")
 			.update({ used: true })
-			.eq("id", row.id);
+			.eq("id", row.id)
+			.eq("used", false)
+			.select("id");
+
+		if (!claimed || claimed.length === 0) {
+			throw new Error("Invalid or expired code.");
+		}
 
 		const token = await signUploadToken(email);
 		return { token };
