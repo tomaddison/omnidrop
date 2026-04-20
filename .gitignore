@@ -1,0 +1,35 @@
+node_modules
+dist
+dist-ssr
+.output
+.nitro
+.vinxi
+.wrangler
+.tanstack
+
+# env files (.env.example is checked in as the template)
+.env
+.env.*
+!.env.example
+*.local
+
+# macOS / editor
+.DS_Store
+.vscode/
+
+# misc
+__unconfig*
+todos.json
+
+# AI assistant config
+.claude/
+
+# Terraform local state + cached providers
+infra/.terraform/
+*.tfplan
+terraform.tfstate
+terraform.tfstate.backup*
+
+# Supabase local dev
+supabase/.temp/
+supabase/.branches/

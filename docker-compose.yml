@@ -1,0 +1,23 @@
+services:
+  localstack:
+    image: localstack/localstack:3.8
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,iam,sts
+      - DEFAULT_REGION=eu-west-2
+    volumes:
+      - "./scripts/localstack-init.sh:/etc/localstack/init/ready.d/init.sh"
+      - localstack-data:/var/lib/localstack
+
+  # Local email inbox — web UI at http://localhost:8025
+  # To use: set RESEND_API_KEY=smtp in .env.local and point nodemailer at port 1025.
+  # Leave RESEND_API_KEY=dev to use the simpler console-log bypass instead.
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+
+volumes:
+  localstack-data:
