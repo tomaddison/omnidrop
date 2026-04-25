@@ -30,10 +30,8 @@ Omnidrop is a web application for sending large files. Sign in with a 6-digit co
 
 ```sh
 cp .env.example .env.development
-docker compose up -d
-bash scripts/localstack-provision.sh
-supabase start
 npm install
+npm run backend:up
 npm run dev
 ```
 
