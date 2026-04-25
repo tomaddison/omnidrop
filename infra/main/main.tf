@@ -1,12 +1,5 @@
 locals {
   is_localstack = var.localstack_endpoint != ""
-
-  # Single source of truth for the transfer size cap. Also read by
-  # src/features/upload/utils.ts so client + server + bucket policy agree.
-  limits             = jsondecode(file("${path.root}/../../limits.json"))
-  max_transfer_bytes = local.limits.maxTransferGb * 1024 * 1024 * 1024
-  # Must match PART_SIZE in src/features/upload/utils.ts (10 MiB).
-  max_part_bytes = 10 * 1024 * 1024
 }
 
 provider "aws" {
@@ -37,8 +30,6 @@ module "s3" {
   allowed_origins        = var.allowed_origins
   enable_acceleration    = !local.is_localstack
   enable_lifecycle_rules = !local.is_localstack
-  max_transfer_bytes     = local.max_transfer_bytes
-  max_part_bytes         = local.max_part_bytes
 }
 
 module "iam" {

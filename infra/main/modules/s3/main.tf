@@ -50,56 +50,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "transfers" {
   }
 }
 
-data "aws_iam_policy_document" "transfers_bucket" {
-  statement {
-    sid    = "DenyLargeUploads"
-    effect = "Deny"
-
-    actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.transfers.arn}/*"]
-
-    principals {
-      type        = "*"
-      identifiers = ["*"]
-    }
-
-    condition {
-      test     = "NumericGreaterThan"
-      variable = "s3:content-length"
-      values   = [tostring(var.max_transfer_bytes)]
-    }
-  }
-
-  # Per-part cap. App-side, complete-multipart verifies the final object size
-  # against the declared file_size; this is the bucket-side belt-and-braces so
-  # a single oversized UploadPart can never land regardless of app-level bugs.
-  statement {
-    sid    = "DenyOversizedPart"
-    effect = "Deny"
-
-    actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.transfers.arn}/*"]
-
-    principals {
-      type        = "*"
-      identifiers = ["*"]
-    }
-
-    condition {
-      test     = "NumericGreaterThan"
-      variable = "s3:content-length"
-      values   = [tostring(var.max_part_bytes)]
-    }
-  }
-}
-
-resource "aws_s3_bucket_policy" "transfers" {
-  bucket = aws_s3_bucket.transfers.id
-  policy = data.aws_iam_policy_document.transfers_bucket.json
-
-  depends_on = [aws_s3_bucket_public_access_block.transfers]
-}
-
 resource "aws_s3_bucket_cors_configuration" "transfers" {
   bucket = aws_s3_bucket.transfers.id
 

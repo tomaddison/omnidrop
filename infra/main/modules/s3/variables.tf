@@ -25,12 +25,3 @@ variable "enable_lifecycle_rules" {
   default     = true
 }
 
-variable "max_transfer_bytes" {
-  description = "Reject S3 PutObject requests above this size. Driven by /limits.json so the bucket policy matches the app-level limit."
-  type        = number
-}
-
-variable "max_part_bytes" {
-  description = "Reject any individual S3 PutObject (including UploadPart) above this size. The app uploads in fixed PART_SIZE chunks; this bucket-level cap defends against a client declaring a small file then shipping a multi-GB body to a single presigned part URL."
-  type        = number
-}
