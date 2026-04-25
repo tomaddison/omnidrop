@@ -2,9 +2,8 @@ import {
 	Body,
 	Container,
 	Head,
-	Heading,
-	Hr,
 	Html,
+	Link,
 	Preview,
 	Section,
 	Tailwind,
@@ -13,32 +12,51 @@ import {
 
 type OtpEmailProps = {
 	code: string;
+	email: string;
+	appUrl: string;
 };
 
-export function OtpEmail({ code }: OtpEmailProps) {
+export function OtpEmail({ code, email, appUrl }: OtpEmailProps) {
 	return (
 		<Html>
 			<Head />
 			<Preview>Your Omnidrop verification code is {code}</Preview>
 			<Tailwind>
-				<Body className="bg-[#f6f9f3] font-sans">
+				<Body className="font-sans">
 					<Container className="mx-auto max-w-[480px] px-6 py-10">
-						<Heading className="mb-4 text-2xl font-semibold text-[#1a1f16]">
-							Omnidrop
-						</Heading>
-						<Text className="mb-6 text-[15px] leading-6 text-[#4a5240]">
-							Use the code below to verify your email address and start your
+						<Text className="text-[24px] font-bold mb-6 font-stretch-130%">
+							<Link href={appUrl} className="text-black no-underline">
+								Omnidrop
+							</Link>
+						</Text>
+						<Text className="mb-6 text-[15px] leading-6 text-black">
+							Use the code below to verify your email address and continue your
 							file transfer. This code expires in 10 minutes.
 						</Text>
-						<Section className="mb-6 rounded-[10px] border border-[#dde8d8] bg-white px-6 py-6 text-center">
-							<Text className="m-0 text-4xl font-bold tracking-[12px] text-[#1a1f16]">
+						<Section className="mb-6 px-6 py-6 text-center">
+							<Text className="m-0 text-4xl font-bold tracking-[10px] text-black">
 								{code}
 							</Text>
 						</Section>
-						<Hr className="mb-4 border-[#dde8d8]" />
-						<Text className="m-0 text-[13px] text-[#8a9480]">
-							If you did not request this code, you can safely ignore this
-							email.
+						<Text className="mb-6 text-[13px] leading-5 text-black">
+							Requested by{" "}
+							<span className="font-medium text-black">{email}</span>. If this
+							wasn't you, you can safely ignore this email.
+						</Text>
+						<Text className="m-0 text-[11px] text-gray-500">
+							<Link
+								href={`${appUrl}/privacy`}
+								className="text-gray-500 underline"
+							>
+								Privacy
+							</Link>
+							<span> · </span>
+							<Link
+								href={`${appUrl}/terms`}
+								className="text-gray-500 underline"
+							>
+								Terms
+							</Link>
 						</Text>
 					</Container>
 				</Body>
@@ -46,3 +64,11 @@ export function OtpEmail({ code }: OtpEmailProps) {
 		</Html>
 	);
 }
+
+OtpEmail.PreviewProps = {
+	code: "123456",
+	email: "you@example.com",
+	appUrl: "https://omnidrop.example.com",
+} satisfies OtpEmailProps;
+
+export default OtpEmail;

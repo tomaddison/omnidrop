@@ -2,32 +2,35 @@ import { Download01Icon } from "@hugeicons/core-free-icons";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HI } from "#/components/ui/hi";
-import { FullBleedBackdrop } from "#/features/branding/fullbleed-backdrop";
-import type { Layout } from "#/features/branding/hero";
 import { Stage } from "#/features/branding/stage";
 import { TopBar } from "#/features/branding/top-bar";
+import { absoluteUrl, getOrigin, SITE } from "#/features/seo/config";
+import { jsonLdScript, webApplicationSchema } from "#/features/seo/schema";
 import { TransferCard } from "#/features/upload/components/transfer-card";
 import type { UploadEntry } from "#/features/upload/types";
 import { walkDataTransferItems } from "#/features/upload/utils";
 
-export const Route = createFileRoute("/")({ component: HomePage });
+const LANDING_TITLE = `${SITE.name} | ${SITE.tagline}`;
 
-const LAYOUT_KEY = "ht_layout";
-const LAYOUT_VALUES: Layout[] = ["centered", "left", "fullbleed"];
-
-function readInitialLayout(): Layout {
-	if (typeof window === "undefined") return "centered";
-	try {
-		const stored = window.localStorage.getItem(LAYOUT_KEY);
-		if (stored && (LAYOUT_VALUES as string[]).includes(stored)) {
-			return stored as Layout;
-		}
-	} catch {}
-	return "centered";
-}
+export const Route = createFileRoute("/")({
+	component: HomePage,
+	head: () => {
+		const origin = getOrigin();
+		const canonical = absoluteUrl("/");
+		return {
+			meta: [
+				{ title: LANDING_TITLE },
+				{ property: "og:title", content: LANDING_TITLE },
+				{ name: "twitter:title", content: LANDING_TITLE },
+				...(origin ? [{ property: "og:url", content: canonical }] : []),
+			],
+			links: origin ? [{ rel: "canonical", href: canonical }] : [],
+			scripts: [jsonLdScript(webApplicationSchema())],
+		};
+	},
+});
 
 function HomePage() {
-	const [layout] = useState<Layout>(readInitialLayout);
 	const [dragging, setDragging] = useState(false);
 	const [entries, setEntries] = useState<UploadEntry[]>([]);
 
@@ -104,11 +107,10 @@ function HomePage() {
 	}, [addEntries]);
 
 	return (
-		<div className="relative min-h-screen">
-			<FullBleedBackdrop layout={layout} />
+		<div className="relative">
 			<TopBar />
 
-			<Stage layout={layout}>
+			<Stage>
 				<TransferCard
 					entries={entries}
 					addEntries={addEntries}
@@ -120,16 +122,15 @@ function HomePage() {
 
 			{dragging && (
 				<div
-					className="ht-fade-in-fast pointer-events-none fixed inset-4 z-90 flex items-center justify-center rounded-3xl backdrop-blur-[2px]"
+					className="om-fade-in-fast pointer-events-none fixed inset-4 z-90 flex items-end justify-center rounded-3xl backdrop-blur-[2px]"
 					style={{
 						border: "2px dashed var(--accent-raw)",
 						background: "rgba(255,255,255,0.04)",
 					}}
 					aria-hidden="true"
 				>
-					<div className="flex items-center gap-3 rounded-full bg-surface-2 px-5 py-3 text-[15px] font-medium text-fg-0">
-						<HI icon={Download01Icon} size={18} strokeWidth={1.8} />
-						Drop anywhere to add
+					<div className="flex items-center animate-in slide-in-from-bottom-10 zoom-in-85 fade-in-0 gap-3 mb-20 rounded-full bg-surface-2 px-5 py-3 text-[15px] font-medium text-fg-0">
+						Drop to add items
 					</div>
 				</div>
 			)}

@@ -1,11 +1,19 @@
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
-import type { ReactNode } from "react";
+import { AlertCircleIcon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { type ReactNode, type RefObject, useState } from "react";
 import { Button } from "#/components/ui/button";
 import { HI } from "#/components/ui/hi";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "#/components/ui/popover";
 import { useTransferFormContext } from "./form-context";
+import type { FormError } from "./validation";
 
 type FormFooterProps = {
 	ready: boolean;
+	formError: FormError;
+	formErrorAnchorRef: RefObject<HTMLElement | null> | null;
 	error: string | null;
 	submitLabel: string;
 	showSubmitArrow?: boolean;
@@ -14,12 +22,27 @@ type FormFooterProps = {
 
 export function FormFooter({
 	ready,
+	formError,
+	formErrorAnchorRef,
 	error,
 	submitLabel,
 	showSubmitArrow = true,
 	children,
 }: FormFooterProps) {
 	const { disabled } = useTransferFormContext();
+	const [formErrorOpen, setFormErrorOpen] = useState(false);
+
+	// Close popover when error clears
+	const hasError = formError !== null;
+	const [prevHasError, setPrevHasError] = useState(hasError);
+	if (hasError !== prevHasError) {
+		setPrevHasError(hasError);
+		if (!hasError) setFormErrorOpen(false);
+	}
+
+	function handleSubmitClick(event: React.MouseEvent<HTMLButtonElement>) {
+		if (formError !== null) event.preventDefault();
+	}
 
 	return (
 		<div className="border-t p-2.5">
@@ -29,17 +52,51 @@ export function FormFooter({
 					{error}
 				</p>
 			)}
-			<Button
-				type="submit"
-				size="xl"
-				disabled={!ready || disabled}
-				className="mt-3.5 w-full shrink-0"
+			<Popover
+				open={formErrorOpen}
+				onOpenChange={(next) => {
+					if (next && formError === null) return;
+					setFormErrorOpen(next);
+				}}
 			>
-				{submitLabel}
-				{ready && !disabled && showSubmitArrow && (
-					<HI icon={ArrowRight01Icon} size={16} strokeWidth={2} />
+				<PopoverTrigger
+					render={
+						<Button
+							type="submit"
+							size="xl"
+							disabled={disabled}
+							onClick={handleSubmitClick}
+							className="mt-3.5 w-full shrink-0"
+						/>
+					}
+				>
+					{submitLabel}
+					{ready && !disabled && showSubmitArrow && (
+						<HI icon={ArrowRight01Icon} size={16} strokeWidth={2} />
+					)}
+				</PopoverTrigger>
+				{formError !== null && (
+					<PopoverContent
+						side="right"
+						align="center"
+						sideOffset={14}
+						anchor={formErrorAnchorRef ?? undefined}
+						className="w-64 p-5 text-center"
+					>
+						<div className="flex flex-col items-center gap-3">
+							<HI
+								icon={AlertCircleIcon}
+								size={24}
+								strokeWidth={1.75}
+								className="text-muted-foreground"
+							/>
+							<p className="text-sm text-popover-foreground leading-snug">
+								{formError.message}
+							</p>
+						</div>
+					</PopoverContent>
 				)}
-			</Button>
+			</Popover>
 		</div>
 	);
 }

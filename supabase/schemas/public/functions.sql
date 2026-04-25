@@ -28,22 +28,30 @@ GRANT  EXECUTE ON FUNCTION public.get_expired_transfers() TO service_role;
 
 
 -- call_edge_function: invokes a Supabase Edge Function over HTTP via pg_net.
--- Requires the following database settings:
---   app.supabase_url        e.g. https://<project-ref>.supabase.co
---   app.service_role_key    service-role JWT
--- Set these in the Supabase dashboard: Database -> Settings -> Configuration.
+-- Reads two secrets from Supabase Vault via private.get_secret:
+--   supabase_url        e.g. https://<project-ref>.supabase.co
+--   service_role_key    the project's Secret key (sb_secret_...)
+-- Both are populated from config.toml's [db.vault] block during `supabase db push`,
+-- which sources them from the SUPABASE_URL and SUPABASE_SECRET_KEY env vars.
 CREATE OR REPLACE FUNCTION public.call_edge_function(function_name text)
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
+DECLARE
+  v_url TEXT := private.get_secret('supabase_url');
+  v_key TEXT := private.get_secret('service_role_key');
 BEGIN
+  IF v_url IS NULL OR v_key IS NULL THEN
+    RAISE EXCEPTION 'call_edge_function: vault secrets supabase_url / service_role_key are not set';
+  END IF;
+
   PERFORM net.http_post(
-    url     := current_setting('app.supabase_url') || '/functions/v1/' || function_name,
+    url     := v_url || '/functions/v1/' || function_name,
     headers := jsonb_build_object(
       'Content-Type',  'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+      'Authorization', 'Bearer ' || v_key
     ),
     body    := '{}'::jsonb
   );
@@ -55,51 +63,54 @@ REVOKE EXECUTE ON FUNCTION public.call_edge_function(text) FROM PUBLIC, anon, au
 GRANT  EXECUTE ON FUNCTION public.call_edge_function(text) TO service_role;
 
 
--- check_and_record_rate_limit: atomic rate-limit check.
--- Counts recent events matching `p_bucket` inside the sliding window `p_window_seconds`.
--- If the count is already at or above `p_limit`, returns false and writes nothing.
--- Otherwise inserts a fresh event row and returns true.
-CREATE OR REPLACE FUNCTION public.check_and_record_rate_limit(
-  p_bucket         text,
-  p_limit          int,
-  p_window_seconds int
-) RETURNS boolean
+-- Atomic per-user monthly quota check + insert (replaces a TOCTOU SELECT count → INSERT in app code).
+CREATE OR REPLACE FUNCTION public.create_transfer_if_under_quota(
+  p_slug            text,
+  p_mode            public.transfer_mode,
+  p_sender_user_id  uuid,
+  p_sender_email    text,
+  p_recipient_email text,
+  p_title           text,
+  p_message         text,
+  p_monthly_limit   integer
+)
+RETURNS TABLE (id uuid, over_quota boolean)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_count int;
+  v_count integer;
+  v_id    uuid;
 BEGIN
-  SELECT count(*) INTO v_count
-  FROM public.rate_limit_events
-  WHERE bucket = p_bucket
-    AND created_at > now() - make_interval(secs => p_window_seconds);
+  PERFORM pg_advisory_xact_lock(hashtext(p_sender_user_id::text));
 
-  IF v_count >= p_limit THEN
-    RETURN false;
+  SELECT count(*) INTO v_count
+  FROM public.transfers
+  WHERE sender_user_id = p_sender_user_id
+    AND created_at >= date_trunc('month', now() AT TIME ZONE 'UTC');
+
+  IF v_count >= p_monthly_limit THEN
+    id := NULL;
+    over_quota := true;
+    RETURN NEXT;
+    RETURN;
   END IF;
 
-  INSERT INTO public.rate_limit_events (bucket) VALUES (p_bucket);
-  RETURN true;
+  INSERT INTO public.transfers (
+    slug, mode, sender_user_id, sender_email, recipient_email, title, message
+  )
+  VALUES (
+    p_slug, p_mode, p_sender_user_id, p_sender_email,
+    nullif(p_recipient_email, ''), nullif(p_title, ''), nullif(p_message, '')
+  )
+  RETURNING transfers.id INTO v_id;
+
+  id := v_id;
+  over_quota := false;
+  RETURN NEXT;
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.check_and_record_rate_limit(text, int, int) FROM PUBLIC, anon, authenticated;
-GRANT  EXECUTE ON FUNCTION public.check_and_record_rate_limit(text, int, int) TO service_role;
-
-
--- cleanup_rate_limit_events: deletes rate-limit rows older than 24 hours.
--- Scheduled nightly via pg_cron.
-CREATE OR REPLACE FUNCTION public.cleanup_rate_limit_events()
-RETURNS void
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  DELETE FROM public.rate_limit_events
-  WHERE created_at < now() - interval '24 hours';
-$$;
-
-REVOKE EXECUTE ON FUNCTION public.cleanup_rate_limit_events() FROM PUBLIC, anon, authenticated;
-GRANT  EXECUTE ON FUNCTION public.cleanup_rate_limit_events() TO service_role;
+REVOKE EXECUTE ON FUNCTION public.create_transfer_if_under_quota(text, public.transfer_mode, uuid, text, text, text, text, integer) FROM PUBLIC, anon, authenticated;
+GRANT  EXECUTE ON FUNCTION public.create_transfer_if_under_quota(text, public.transfer_mode, uuid, text, text, text, text, integer) TO service_role;

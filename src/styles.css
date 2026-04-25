@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -41,7 +42,7 @@
 }
 
 .dark {
-  /* Omnidrop palette — cool blue-black surfaces, white primary */
+  /* Omnidrop palette - cool blue-black surfaces, white primary */
   --bg-0: #0b0d10;
   --bg-1: #12151a;
   --bg-2: #181c22;
@@ -97,7 +98,7 @@
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: "Inter Variable", sans-serif;
-  --font-serif: "Instrument Serif", serif;
+  --font-handwritten: "Permanent Marker", serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -183,14 +184,14 @@
 }
 
 @layer utilities {
-  .font-serif-italic {
-    font-family: var(--font-serif);
+  .font-handwritten-italic {
+    font-family: var(--font-handwritten);
     font-style: italic;
   }
 }
 
 /* Motion primitives used throughout the Omnidrop UI */
-@keyframes ht-fade-in {
+@keyframes om-fade-in {
   from {
     opacity: 0;
     transform: translateY(6px);
@@ -200,7 +201,7 @@
     transform: translateY(0);
   }
 }
-@keyframes ht-pulse {
+@keyframes om-pulse {
   0%,
   100% {
     opacity: 0.4;
@@ -209,7 +210,7 @@
     opacity: 1;
   }
 }
-@keyframes ht-pop {
+@keyframes om-pop {
   0% {
     transform: scale(0.85);
     opacity: 0;
@@ -222,7 +223,7 @@
     opacity: 1;
   }
 }
-@keyframes ht-shimmer {
+@keyframes om-shimmer {
   0% {
     transform: translateX(-100%);
   }
@@ -230,7 +231,7 @@
     transform: translateX(100%);
   }
 }
-@keyframes ht-shake-x {
+@keyframes om-shake-x {
   0%,
   100% {
     transform: translateX(0);
@@ -249,31 +250,20 @@
   }
 }
 
-.ht-fade-in {
-  animation: ht-fade-in 0.4s var(--ease) both;
+.om-fade-in {
+  animation: om-fade-in 0.4s var(--ease) both;
 }
-.ht-fade-in-fast {
-  animation: ht-fade-in 0.25s var(--ease) both;
+.om-fade-in-fast {
+  animation: om-fade-in 0.25s var(--ease) both;
 }
-.ht-pop {
-  animation: ht-pop 0.4s var(--ease) both;
+.om-pop {
+  animation: om-pop 0.4s var(--ease) both;
 }
-.ht-pulse-dot {
-  animation: ht-pulse 1.4s ease-in-out infinite;
+.om-pulse-dot {
+  animation: om-pulse 1.4s ease-in-out infinite;
 }
-.ht-shake {
-  animation: ht-shake-x 0.35s var(--ease);
-}
-
-/* Film-grain overlay used behind the page to add texture (lifted from prototype) */
-.ht-grain {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.35;
-  mix-blend-mode: overlay;
-  z-index: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+.om-shake {
+  animation: om-shake-x 0.35s var(--ease);
 }
 
 /* Thin scrollbars everywhere */

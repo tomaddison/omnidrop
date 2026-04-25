@@ -11,6 +11,28 @@ export function formatBytes(bytes: number): string {
 	return `${value.toFixed(precision)} ${units[i]}`;
 }
 
+export function pluralizeFiles(count: number): string {
+	return count === 1 ? "file" : "files";
+}
+
+export function formatExpiryRelative(iso: string): string {
+	const expires = new Date(iso);
+	const now = new Date();
+	const diffMs = expires.getTime() - now.getTime();
+	const days = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+	if (days === 0) return "Today";
+	if (days === 1) return "Tomorrow";
+	return `${days} days`;
+}
+
+export function formatExpiryDate(iso: string): string {
+	return new Date(iso).toLocaleDateString("en-GB", {
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	});
+}
+
 export type FileKind = "audio" | "image" | "video" | "doc" | "zip" | "generic";
 
 const EXT_MAP: Record<string, FileKind> = {

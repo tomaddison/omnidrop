@@ -1,4 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 24" fill="none" aria-hidden="true">
-	<circle cx="16" cy="12" r="9" stroke="currentColor" stroke-width="1.75" />
-	<circle cx="28" cy="12" r="9" stroke="currentColor" stroke-width="1.75" />
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 735 134" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-13371.483968,-201.866443)">
+        <g transform="matrix(1,0,0,1,11942.210014,2.343235)">
+            <g transform="matrix(1,0,0,1,-6.5,0)">
+                <g transform="matrix(0.214713,0,0,0.175187,1401.710859,170.650767)">
+                    <g transform="matrix(552.834356,0,0,552.834356,3594.09816,745)">
+                    </g>
+                    <text x="1210px" y="745px" style="font-family:'SFProDisplay-Medium', 'SF Pro Display';font-weight:500;font-size:552.834px;fill:white;">Omnidr<tspan x="2979.988px " y="745px ">o</tspan>p</text>
+                </g>
+                <g transform="matrix(0,-0.74892,0.810754,0,805.812649,3403.954191)">
+                    <circle cx="4189.5" cy="865.5" r="79.5" style="fill:none;stroke:white;stroke-width:18.69px;"/>
+                </g>
+                <g transform="matrix(0,0.842845,-0.912434,0,1811.313248,-3152.528409)">
+                    <path d="M4125.752,303.613L3989.248,303.613C3988.418,299.292 3988,294.901 3988,290.5C3988,252.142 4019.142,221 4057.5,221C4095.858,221 4127,252.142 4127,290.5C4127,294.901 4126.582,299.292 4125.752,303.613Z" style="fill:none;stroke:white;stroke-opacity:0.58;stroke-width:16.6px;"/>
+                </g>
+            </g>
+        </g>
+    </g>
 </svg>

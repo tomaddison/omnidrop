@@ -4,11 +4,8 @@ Layout primitives and copy for the landing page. These exist as a feature rather
 
 ## Files
 
-- `stage.tsx` — the wrapper that positions the transfer card (`centered`, `left`, or `fullbleed`).
-- `hero.tsx` — headline and tagline copy, rendered only in the `left` layout.
-- `fullbleed-backdrop.tsx` — the oversized background lettering behind the transfer card in the `fullbleed` layout.
-- `top-bar.tsx` — header with logo and "Sign in" CTA.
-
-## Layout
-
-`Layout` is a three-way toggle (`centered` | `left` | `fullbleed`). The value is persisted to `localStorage` by the home route and threaded into each branding primitive. The cycling button in the top bar is there for the portfolio build so reviewers can see the variations.
+- `stage.tsx` - wraps the transfer card and positions the hero copy alongside it.
+- `hero.tsx` - headline and tagline copy rendered next to the transfer card.
+- `top-bar.tsx` - header with the logo on the left; when a user is signed in, shows their email and a Sign out button on the right.
+- `footer.tsx` - site-wide footer with `Privacy` and `Terms` links, rendered once by `routes/__root.tsx` and pinned to the bottom of the viewport via a flex column wrapper.
+- `legal-page.tsx` - shared shell used by `/privacy` and `/terms`. Renders the `TopBar` and a centred prose container with styling for `<h2>`, `<h3>`, `<p>`, `<ul>`, `<strong>`, and `<a>`.

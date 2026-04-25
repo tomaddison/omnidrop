@@ -1,11 +1,9 @@
-"use server";
-
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { applyGuards } from "#/features/security/server/guard";
 import { createServiceClient } from "../../../../supabase/utils/server";
+import { assertReady } from "./assert-ready";
 
 const schema = z.object({
 	slug: z.string().min(1).max(64),
@@ -27,13 +25,6 @@ const s3 = new S3Client({
 export const issueDownloadUrlsFn = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) => schema.parse(data))
 	.handler(async ({ data }) => {
-		await applyGuards(data, {
-			turnstile: false,
-			rateLimits: (d, { ip }) => [
-				{ bucket: `download:slug:${d.slug}:ip:${ip}`, limit: 20, windowSeconds: 600 },
-			],
-		});
-
 		const supabase = createServiceClient();
 
 		const { data: transfer, error } = await supabase
@@ -44,18 +35,17 @@ export const issueDownloadUrlsFn = createServerFn({ method: "POST" })
 			.eq("slug", data.slug)
 			.single();
 
-		if (error || !transfer) throw new Error("Transfer not found.");
-		if (transfer.status !== "ready") throw new Error("Transfer is not ready.");
-		if (transfer.expires_at && new Date(transfer.expires_at) < new Date()) {
-			throw new Error("This transfer has expired.");
-		}
+		assertReady(transfer, error);
 
 		const urls = await Promise.all(
 			transfer.transfer_files.map(async (file) => {
+				const asciiName = file.relative_path
+					.replace(/[^\x20-\x7e]/g, "_")
+					.replace(/["\\]/g, "_");
 				const command = new GetObjectCommand({
-					Bucket: process.env.S3_BUCKET ?? "ht-transfers",
+					Bucket: process.env.S3_BUCKET ?? "omnidrop-transfers",
 					Key: file.s3_key,
-					ResponseContentDisposition: `attachment; filename="${encodeURIComponent(file.relative_path)}"`,
+					ResponseContentDisposition: `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(file.relative_path)}`,
 					ResponseContentType: "application/octet-stream",
 				});
 				// 5-minute TTL: long enough for the browser to begin every file in a

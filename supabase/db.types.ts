@@ -34,57 +34,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      email_verifications: {
-        Row: {
-          attempts: number
-          code_hash: string
-          created_at: string
-          email: string
-          expires_at: string
-          id: string
-          ip_address: unknown | null
-          used: boolean
-        }
-        Insert: {
-          attempts?: number
-          code_hash: string
-          created_at?: string
-          email: string
-          expires_at: string
-          id?: string
-          ip_address?: unknown | null
-          used?: boolean
-        }
-        Update: {
-          attempts?: number
-          code_hash?: string
-          created_at?: string
-          email?: string
-          expires_at?: string
-          id?: string
-          ip_address?: unknown | null
-          used?: boolean
-        }
-        Relationships: []
-      }
-      rate_limit_events: {
-        Row: {
-          bucket: string
-          created_at: string
-          id: string
-        }
-        Insert: {
-          bucket: string
-          created_at?: string
-          id?: string
-        }
-        Update: {
-          bucket?: string
-          created_at?: string
-          id?: string
-        }
-        Relationships: []
-      }
       transfer_files: {
         Row: {
           created_at: string
@@ -127,10 +76,9 @@ export type Database = {
           id: string
           message: string | null
           mode: Database["public"]["Enums"]["transfer_mode"]
-          password_hash: string | null
           recipient_email: string | null
           sender_email: string
-          sender_ip: unknown | null
+          sender_user_id: string | null
           slug: string
           status: Database["public"]["Enums"]["transfer_status"]
           title: string | null
@@ -142,10 +90,9 @@ export type Database = {
           id?: string
           message?: string | null
           mode: Database["public"]["Enums"]["transfer_mode"]
-          password_hash?: string | null
           recipient_email?: string | null
           sender_email: string
-          sender_ip?: unknown | null
+          sender_user_id?: string | null
           slug: string
           status?: Database["public"]["Enums"]["transfer_status"]
           title?: string | null
@@ -157,10 +104,9 @@ export type Database = {
           id?: string
           message?: string | null
           mode?: Database["public"]["Enums"]["transfer_mode"]
-          password_hash?: string | null
           recipient_email?: string | null
           sender_email?: string
-          sender_ip?: unknown | null
+          sender_user_id?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["transfer_status"]
           title?: string | null
@@ -177,17 +123,21 @@ export type Database = {
         Args: { function_name: string }
         Returns: undefined
       }
-      check_and_record_rate_limit: {
+      create_transfer_if_under_quota: {
         Args: {
-          p_bucket: string
-          p_limit: number
-          p_window_seconds: number
+          p_message: string
+          p_mode: Database["public"]["Enums"]["transfer_mode"]
+          p_monthly_limit: number
+          p_recipient_email: string
+          p_sender_email: string
+          p_sender_user_id: string
+          p_slug: string
+          p_title: string
         }
-        Returns: boolean
-      }
-      cleanup_rate_limit_events: {
-        Args: never
-        Returns: undefined
+        Returns: {
+          id: string
+          over_quota: boolean
+        }[]
       }
       get_expired_transfers: {
         Args: never
@@ -200,7 +150,7 @@ export type Database = {
     }
     Enums: {
       transfer_mode: "link" | "email"
-      transfer_status: "uploading" | "pending" | "ready" | "failed" | "expired"
+      transfer_status: "uploading" | "ready" | "failed" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -332,7 +282,7 @@ export const Constants = {
   public: {
     Enums: {
       transfer_mode: ["link", "email"],
-      transfer_status: ["uploading", "pending", "ready", "failed", "expired"],
+      transfer_status: ["uploading", "ready", "failed", "expired"],
     },
   },
 } as const

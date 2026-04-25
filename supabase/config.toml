@@ -47,18 +47,22 @@ default_pool_size = 20
 # Maximum number of client connections allowed.
 max_client_conn = 100
 
-# [db.vault]
-# secret_key = "env(SECRET_VALUE)"
+# Read by `supabase db push` and synced into vault.decrypted_secrets on the remote DB.
+# The cron job calls cleanup-s3 via public.call_edge_function, which reads these via private.get_secret.
+[db.vault]
+supabase_url     = "env(SUPABASE_URL)"
+service_role_key = "env(SUPABASE_SECRET_KEY)"
 
 [db.migrations]
 # If disabled, migrations will be skipped during a db push or reset.
 enabled = true
-# Declarative schema files — source of truth for db diff / db push.
-# Order matters: enums → tables → rls → functions → cron jobs.
+# Declarative schema files - source of truth for db diff / db push.
+# Order matters: enums → tables → rls → private helpers → functions → cron jobs.
 schema_paths = [
   "./schemas/public/enums.sql",
   "./schemas/public/tables.sql",
   "./schemas/public/rls.sql",
+  "./schemas/private/functions/get_secret.sql",
   "./schemas/public/functions.sql",
   "./schemas/cron/jobs.sql",
 ]
@@ -210,10 +214,10 @@ token_verifications = 30
 web3 = 30
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
-# [auth.captcha]
-# enabled = true
-# provider = "hcaptcha"
-# secret = ""
+[auth.captcha]
+enabled = true
+provider = "turnstile"
+secret = "env(TURNSTILE_SECRET_KEY)"
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
@@ -226,7 +230,7 @@ enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
-max_frequency = "1s"
+max_frequency = "30s"
 # Number of characters used in the email OTP.
 otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
@@ -373,8 +377,8 @@ allow_dynamic_registration = false
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
-# `per_worker` (default) — enables hot reload during local development.
-# `oneshot` — fallback mode if hot reload causes issues (e.g. in large repos or with symlinks).
+# `per_worker` (default) - enables hot reload during local development.
+# `oneshot` - fallback mode if hot reload causes issues (e.g. in large repos or with symlinks).
 policy = "per_worker"
 # Port to attach the Chrome inspector for debugging edge functions.
 inspector_port = 8083

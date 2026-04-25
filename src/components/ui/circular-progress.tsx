@@ -7,6 +7,7 @@ type CircularProgressProps = {
 	strokeWidth?: number;
 	className?: string;
 	children?: ReactNode;
+	indeterminate?: boolean;
 };
 
 export function CircularProgress({
@@ -15,11 +16,14 @@ export function CircularProgress({
 	strokeWidth = 8,
 	className,
 	children,
+	indeterminate = false,
 }: CircularProgressProps) {
 	const clamped = Math.min(100, Math.max(0, value));
 	const radius = (size - strokeWidth) / 2;
 	const circumference = 2 * Math.PI * radius;
-	const offset = circumference * (1 - clamped / 100);
+	const offset = indeterminate
+		? circumference * 0.9
+		: circumference * (1 - clamped / 100);
 	const center = size / 2;
 
 	return (
@@ -30,9 +34,9 @@ export function CircularProgress({
 			<svg
 				width={size}
 				height={size}
-				className="-rotate-90"
+				className={indeterminate ? "animate-spin" : "-rotate-90"}
 				role="img"
-				aria-label={`${Math.round(clamped)}%`}
+				aria-label={indeterminate ? "Working" : `${Math.round(clamped)}%`}
 			>
 				<circle
 					cx={center}
@@ -51,7 +55,11 @@ export function CircularProgress({
 					strokeLinecap="round"
 					strokeDasharray={circumference}
 					strokeDashoffset={offset}
-					className="stroke-primary transition-[stroke-dashoffset] duration-200 ease-linear"
+					className={cn(
+						"stroke-primary",
+						!indeterminate &&
+							"transition-[stroke-dashoffset] duration-200 ease-linear",
+					)}
 				/>
 			</svg>
 			<div className="absolute inset-0 flex items-center justify-center">

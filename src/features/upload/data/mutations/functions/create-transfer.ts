@@ -1,21 +1,26 @@
-"use server";
-
-import { S3Client } from "@aws-sdk/client-s3";
-import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
+import {
+	CreateMultipartUploadCommand,
+	S3Client,
+	UploadPartCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createServerFn } from "@tanstack/react-start";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { applyGuards } from "#/features/security/server/guard";
-import { MAX_TOTAL_BYTES, validateRelativePath } from "#/features/upload/utils";
-import { verifyUploadToken } from "#/features/verification/utils";
+import {
+	MAX_TOTAL_BYTES,
+	MAX_TRANSFER_LABEL,
+	PART_SIZE,
+	validateRelativePath,
+} from "#/features/upload/utils";
 import { createServiceClient } from "../../../../../../supabase/utils/server";
+import { createAuthClient } from "../../../../../../supabase/utils/server-auth";
 
-const PRESIGNED_POST_TTL_SECONDS = 15 * 60;
+const PRESIGNED_PART_TTL_SECONDS = 60 * 60;
+const MONTHLY_TRANSFER_LIMIT = 20;
 
 export const schema = z
 	.object({
-		token: z.string(),
-		turnstileToken: z.string().min(1),
 		mode: z.enum(["link", "email"]),
 		expiryDays: z.number().int().min(1).max(7),
 		recipientEmail: z.string().email().optional(),
@@ -41,7 +46,7 @@ export const schema = z
 				if (total > MAX_TOTAL_BYTES) {
 					ctx.addIssue({
 						code: "custom",
-						message: "Transfer exceeds 2GB limit.",
+						message: `Transfer exceeds ${MAX_TRANSFER_LABEL} limit.`,
 					});
 				}
 			}),
@@ -72,64 +77,51 @@ const s3 = new S3Client({
 export const createTransferFn = createServerFn({ method: "POST" })
 	.inputValidator((data: unknown) => schema.parse(data))
 	.handler(async ({ data }) => {
-		const { ip } = await applyGuards(data, {
-			rateLimits: (_d, { ip: clientIp }) => [
-				{
-					bucket: `create_transfer:ip:${clientIp}`,
-					limit: 10,
-					windowSeconds: 3600,
-				},
-			],
-		});
+		const auth = createAuthClient();
+		const { data: claimsData, error: claimsError } =
+			await auth.auth.getClaims();
+		const claims = claimsData?.claims;
 
-		const { email } = await verifyUploadToken(data.token);
+		if (claimsError || !claims?.sub || !claims.email) {
+			throw new Error("Session expired. Please request a new code.");
+		}
+		const userId = claims.sub;
+		const userEmail = claims.email;
 
-		// Per-sender daily bucket layered on top of the per-IP bucket.
 		const supabase = createServiceClient();
-		const { data: emailOk, error: emailLimitError } = await supabase.rpc(
-			"check_and_record_rate_limit",
-			{
-				p_bucket: `create_transfer:email:${email}`,
-				p_limit: 20,
-				p_window_seconds: 86_400,
-			},
-		);
-		if (emailLimitError) {
-			throw new Error("Rate limit check failed. Please try again.");
-		}
-		if (emailOk === false) {
-			throw new Error(
-				"You've reached the daily transfer limit. Please try again tomorrow.",
-			);
-		}
 
-		const slug = nanoid(8);
+		const slug = nanoid(16);
 
-		const { data: transfer, error: transferError } = await supabase
-			.from("transfers")
-			.insert({
-				slug,
-				mode: data.mode,
-				sender_email: email,
-				sender_ip: ip === "unknown" ? null : ip,
-				recipient_email: data.recipientEmail ?? null,
-				title: data.title ?? null,
-				message: data.message ?? null,
+		const { data: quotaResult, error: quotaError } = await supabase
+			.rpc("create_transfer_if_under_quota", {
+				p_slug: slug,
+				p_mode: data.mode,
+				p_sender_user_id: userId,
+				p_sender_email: userEmail,
+				p_recipient_email: data.recipientEmail ?? "",
+				p_title: data.title ?? "",
+				p_message: data.message ?? "",
+				p_monthly_limit: MONTHLY_TRANSFER_LIMIT,
 			})
-			.select("id")
 			.single();
 
-		if (transferError || !transfer) {
+		if (quotaError || !quotaResult) {
 			throw new Error("Failed to create transfer.");
 		}
+		if (quotaResult.over_quota) {
+			throw new Error(
+				`You've used all ${MONTHLY_TRANSFER_LIMIT} transfers this month. Resets on the 1st.`,
+			);
+		}
+		const transfer = { id: quotaResult.id as string };
 
 		const uploadUrls: {
 			fileId: string;
-			url: string;
-			fields: Record<string, string>;
+			uploadId: string;
+			partUrls: string[];
 		}[] = [];
 
-		const bucket = process.env.S3_BUCKET ?? "ht-transfers";
+		const bucket = process.env.S3_BUCKET ?? "omnidrop-transfers";
 
 		for (const file of data.files) {
 			const s3Key = `${slug}/${file.relativePath}`;
@@ -149,23 +141,35 @@ export const createTransferFn = createServerFn({ method: "POST" })
 				throw new Error("Failed to record transfer file.");
 			}
 
-			// Presigned POST (not PUT) so we can pin the upload size with
-			// content-length-range. A PUT URL can't constrain body size, letting a
-			// client smuggle an arbitrarily large object past our per-transfer limit.
-			const { url, fields } = await createPresignedPost(s3, {
-				Bucket: bucket,
-				Key: s3Key,
-				Expires: PRESIGNED_POST_TTL_SECONDS,
-				Conditions: [
-					["content-length-range", file.size, file.size],
-					["eq", "$Content-Type", "application/octet-stream"],
-				],
-				Fields: {
-					"Content-Type": "application/octet-stream",
-				},
-			});
+			// Multipart, not presigned POST — POST requires a single-request body (5 GB cap, full buffer).
+			const { UploadId } = await s3.send(
+				new CreateMultipartUploadCommand({
+					Bucket: bucket,
+					Key: s3Key,
+					ContentType: "application/octet-stream",
+				}),
+			);
+			if (!UploadId) {
+				throw new Error("Failed to initiate multipart upload.");
+			}
 
-			uploadUrls.push({ fileId: fileRow.id, url, fields });
+			const totalParts = Math.max(1, Math.ceil(file.size / PART_SIZE));
+			const partUrls: string[] = [];
+			for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+				const cmd = new UploadPartCommand({
+					Bucket: bucket,
+					Key: s3Key,
+					UploadId,
+					PartNumber: partNumber,
+				});
+				partUrls.push(
+					await getSignedUrl(s3, cmd, {
+						expiresIn: PRESIGNED_PART_TTL_SECONDS,
+					}),
+				);
+			}
+
+			uploadUrls.push({ fileId: fileRow.id, uploadId: UploadId, partUrls });
 		}
 
 		return { transferId: transfer.id, slug, uploadUrls };

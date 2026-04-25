@@ -1,71 +1,101 @@
 # Codebase Overview
 
-A tour of how the project is laid out and how a request flows through it.
-
 ## Top level
 
 ```
-src/                 Application code (routes, features, shared UI, email templates)
-infra/               Terraform for S3 buckets and IAM users
-supabase/            Declarative schema, migrations, edge functions, cron jobs
-scripts/             One-shot shell scripts for LocalStack provisioning
-public/              Static assets served by Vite
+src/                 App code (routes, features, shared UI, emails)
+infra/               Terraform: bootstrap (state bucket, OIDC, deploy role) + main (S3 bucket + IAM users)
+supabase/            Schema, migrations, edge functions, cron
+scripts/             LocalStack provisioning, email rendering
+public/              Static assets
+.github/workflows/   `deploy.yaml` runs the production pipeline
 ```
 
-## `src/` layout
+## `src/`
 
 ```
-src/
-  routes/            TanStack Router file-based routes
-  features/          Feature modules (see below)
-  lib/               Shared utilities with no feature ownership
-  emails/            React Email templates rendered by the server
-  components/ui/     Primitives (shadcn + Base UI wrappers)
-  router.tsx         Router instantiation
-  styles.css         Tailwind entry + design tokens
+routes/            TanStack Router file-based routes
+features/          Self-contained modules (see below)
+lib/               Shared utilities with no feature ownership
+emails/            React Email templates
+components/ui/     shadcn + Base UI primitives
 ```
 
 ## Feature modules
 
-Each folder under `src/features/` is a self-contained module owning its UI, server functions, utilities, and types. The convention is:
-
 ```
 features/<name>/
-  README.md                            What the feature does
-  components/                          React components scoped to the feature
-  server/                              Server-only code (queries, external APIs)
-  data/mutations/functions/            TanStack Start server functions
-  hooks/                               React hooks scoped to the feature
-  utils.ts, types.ts                   Shared within the feature
+  components/                          UI scoped to the feature
+  server/                              Server-only code
+  data/server/                         Auth-style server functions
+  data/mutations/functions/            Data mutations
+  hooks/                               React hooks
 ```
 
-Features do not import from each other's internals. If two features need the same code, it moves to `src/lib/` or a new module.
+Features don't import each other's internals. Shared code moves to `src/lib/`.
 
-## Request flow: uploading a transfer
+## Upload request flow
 
-1. User picks files in `routes/index.tsx`. The `TransferCard` component in the `upload` feature owns the state machine.
-2. On submit, the client calls `requestOtp` (in the `verification` feature) which emails a 6-digit code.
-3. Once the code is entered, `verifyOtpFn` returns a short-lived JWT upload token.
-4. The client calls `createTransferFn` (in the `upload` feature) with the token. The server inserts rows in Postgres and returns presigned POST URLs for each file.
-5. The client uploads each file directly to S3 via `s3-client.ts`.
-6. `finalizeTransferFn` flips the transfer to `ready` and, for email mode, dispatches the notification email.
-7. Recipient opens `/d/$slug`. `getTransferFn` and `issueDownloadUrlsFn` (in the `download` feature) return signed GET URLs with a 5-minute TTL.
+1. `routes/index.tsx` → `TransferCard` (upload feature) owns the state machine.
+2. Client calls `loginWithOtp` → Supabase `signInWithOtp` emails a 6-digit code.
+3. Client calls `verifyLoginOtp` → Supabase `verifyOtp` writes session cookies (SSR adapter).
+4. `createTransferFn` reads the user via `createAuthClient().auth.getUser()`, enforces a 20-transfers-per-calendar-month quota by `auth.users.id`, returns presigned POST URLs.
+5. Client uploads to S3 via `s3-client.ts`.
+6. `finalizeTransferFn` flips the transfer to `ready` (scoped by `sender_user_id`) and dispatches the notification email.
+7. Recipient hits `/d/$slug`. `getTransferFn` + `issueDownloadUrlsFn` return short-lived signed GET URLs. Public, no auth.
 
-## Security posture
+## Security
 
-Mutating server functions call `applyGuards()` from `features/security/server/guard.ts`, which performs Cloudflare Turnstile verification and per-bucket rate limiting (by IP and/or email) using a Postgres-backed `check_and_record_rate_limit` RPC. Read-only download endpoints skip Turnstile but are still rate-limited.
-
-S3 uploads use presigned POST with a `content-length-range` condition so the client cannot exceed the declared size. A bucket policy rejects anything over 2 GiB as a second line of defence.
+Sign-in is delegated to Supabase Auth; per-IP limits in `[auth.rate_limit]` of `supabase/config.toml`. Mutating server functions reject unauthenticated requests. RLS is deny-all for `anon`/`authenticated` - all access goes through the service-role client (`createServiceClient`). Presigned POSTs include `content-length-range`; the S3 bucket policy enforces the cap server-side as defence in depth. Download URLs are short-lived.
 
 ## Database
 
-The schema lives in `supabase/schemas/` (declarative) and is compiled into migrations under `supabase/migrations/`. Generated types are committed to `supabase/db.types.ts` and regenerated with `npm run types` after a schema change.
+Declarative schema in `supabase/schemas/`, compiled to `supabase/migrations/`. Generated types in `supabase/db.types.ts` (`npm run types`). Two tables: `transfers` (FK to `auth.users`) and `transfer_files`.
 
-Three tables drive the app: `transfers`, `transfer_files`, and `email_verifications`. Rate-limit events live in `rate_limit_events` and are purged nightly.
+## Infrastructure
+
+| Resource  | Production name         | Purpose                          |
+| --------- | ----------------------- | -------------------------------- |
+| S3 bucket | `omnidrop-transfers`    | Uploads + presigned GET, accel'd |
+| IAM user  | `omnidrop-app-user`     | Server-side presigning           |
+| IAM user  | `omnidrop-cleanup-user` | `cleanup-s3` edge function       |
+
+State: S3 (`omnidrop-tfstate`, `use_lockfile = true`). Backends in `infra/main/backends/`. LocalStack backend generated by `scripts/localstack-provision.sh`.
+
+## Deployment
+
+Push to `main` → `.github/workflows/deploy.yaml`: tests → Supabase migrations → `terraform apply` → redeploy `cleanup-s3` → sync Vercel env → ship build. See `.github/workflows/README.md` and `bootstrap.md`.
+
+## Transfer size limit
+
+Set in `/limits.json`:
+
+```json
+{ "maxTransferGb": 4 }
+```
+
+Three readers:
+
+1. **Client** - `MAX_TOTAL_BYTES` in `src/features/upload/utils.ts`.
+2. **Server** - Zod schema in `src/features/upload/data/mutations/functions/create-transfer.ts` (also pins each presigned POST).
+3. **S3 policy** - `DenyLargeUploads` in `infra/main/modules/s3/main.tf`, fed by `infra/main/main.tf` reading `/limits.json`.
+
+To change: edit `/limits.json` and merge.
+
+## Legal pages
+
+`/privacy` and `/terms` share `LegalPage` in `features/branding/legal-page.tsx`. Footer links rendered site-wide; both linked from `otp.tsx` and `transfer-ready.tsx` email templates.
+
+## SEO & metadata
+
+Per-route via TanStack Start's `head()`. Shared strings + JSON-LD builders in `src/features/seo/`. `config.ts` holds brand constants and `getOrigin()` (reads `VITE_APP_URL`). Root layout emits `organisationSchema` + `websiteSchema`; landing page adds `webApplicationSchema`. Download pages set `noindex, nofollow`. Sitemap via TanStack Start plugin in `vite.config.ts`.
 
 ## Where to add things
 
-- New page: add a file under `src/routes/`.
-- New server action: add it under the relevant feature's `data/mutations/functions/` and wrap it in `guarded()`.
-- New shared UI primitive: add it to `src/components/ui/` only if it is truly primitive. Otherwise, scope it to the feature.
-- New background job: add SQL under `supabase/schemas/cron/` and the runtime code under `supabase/functions/`.
+- **Page** → `src/routes/`.
+- **Auth step** → `src/features/authentication/data/server/`.
+- **Mutation** → `<feature>/data/mutations/functions/`, auth via `createAuthClient().auth.getUser()`.
+- **UI primitive** → `src/components/ui/` only if truly primitive; otherwise scope to the feature.
+- **Background job** → SQL in `supabase/schemas/cron/`, runtime in `supabase/functions/`.
+- **Route metadata** → export `head()`, import from `src/features/seo/config.ts`, add a builder in `schema.ts` if needed.
+- **Production env var** → add to `Sync Vercel production env vars` in `deploy.yaml` and declare the GitHub secret/variable.

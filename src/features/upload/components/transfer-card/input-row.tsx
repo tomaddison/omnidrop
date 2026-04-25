@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { type Ref, useId, useState } from "react";
 import { cn } from "#/lib/utils";
 
 type InputRowProps = {
@@ -7,9 +7,10 @@ type InputRowProps = {
 	onChange: (value: string) => void;
 	type?: string;
 	multiline?: boolean;
-	grow?: boolean;
 	disabled?: boolean;
+	readOnly?: boolean;
 	required?: boolean;
+	anchorRef?: Ref<HTMLDivElement>;
 };
 
 export function InputRow({
@@ -18,9 +19,10 @@ export function InputRow({
 	onChange,
 	type = "text",
 	multiline,
-	grow,
 	disabled,
+	readOnly,
 	required,
+	anchorRef,
 }: InputRowProps) {
 	const id = useId();
 	const [focused, setFocused] = useState(false);
@@ -34,19 +36,23 @@ export function InputRow({
 		onFocus: () => setFocused(true),
 		onBlur: () => setFocused(false),
 		disabled,
+		readOnly,
 		required,
 		placeholder: " ",
 		className:
-			"peer w-full bg-transparent px-0 pt-5 pb-1.5 text-sm text-foreground outline-none disabled:opacity-50",
+			"peer block w-full bg-transparent px-0 py-0 text-sm text-foreground outline-none disabled:opacity-50",
 	};
 
 	return (
-		<div className={cn("relative", grow && "flex h-full flex-col")}>
+		<div ref={anchorRef} className="relative pt-5 pb-1.5">
 			{multiline ? (
 				<textarea
 					rows={2}
 					{...commonProps}
-					className={cn(commonProps.className, "resize-none", grow && "flex-1")}
+					className={cn(
+						commonProps.className,
+						"resize-none overflow-hidden field-sizing-content",
+					)}
 				/>
 			) : (
 				<input type={type} {...commonProps} />
@@ -58,7 +64,7 @@ export function InputRow({
 					floated
 						? "top-1 text-xs"
 						: multiline
-							? "top-[22px] text-sm"
+							? "top-5 text-sm"
 							: "top-1/2 -translate-y-1/2 text-sm",
 				)}
 			>

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { MAX_TOTAL_BYTES } from "#/features/upload/utils";
 
 vi.mock("@tanstack/react-start", () => ({
 	createServerFn: () => ({
@@ -6,13 +7,12 @@ vi.mock("@tanstack/react-start", () => ({
 	}),
 }));
 
-vi.mock("#/features/security/server/guard", () => ({
-	applyGuards: vi.fn(),
-	extractIp: vi.fn(),
-}));
-
 vi.mock("../../../../../../supabase/utils/server", () => ({
 	createServiceClient: vi.fn(),
+}));
+
+vi.mock("../../../../../../supabase/utils/server-auth", () => ({
+	createAuthClient: vi.fn(),
 }));
 
 import { schema } from "./create-transfer";
@@ -20,8 +20,6 @@ import { schema } from "./create-transfer";
 const VALID_FILE = { name: "file.txt", relativePath: "file.txt", size: 100 };
 
 const BASE = {
-	token: "tok",
-	turnstileToken: "ts",
 	mode: "link" as const,
 	expiryDays: 3,
 	files: [VALID_FILE],
@@ -33,7 +31,11 @@ describe("createTransfer schema", () => {
 	});
 
 	it("accepts a valid email-mode transfer with a recipient", () => {
-		const input = { ...BASE, mode: "email" as const, recipientEmail: "r@example.com" };
+		const input = {
+			...BASE,
+			mode: "email" as const,
+			recipientEmail: "r@example.com",
+		};
 		expect(schema.safeParse(input).success).toBe(true);
 	});
 
@@ -48,28 +50,34 @@ describe("createTransfer schema", () => {
 	});
 
 	it("rejects more than 250 files", () => {
-		const input = { ...BASE, files: Array.from({ length: 251 }, () => VALID_FILE) };
+		const input = {
+			...BASE,
+			files: Array.from({ length: 251 }, () => VALID_FILE),
+		};
 		expect(schema.safeParse(input).success).toBe(false);
 	});
 
 	it("accepts exactly 250 files", () => {
-		const input = { ...BASE, files: Array.from({ length: 250 }, () => VALID_FILE) };
+		const input = {
+			...BASE,
+			files: Array.from({ length: 250 }, () => VALID_FILE),
+		};
 		expect(schema.safeParse(input).success).toBe(true);
 	});
 
-	it("rejects a total file size exceeding 2 GB", () => {
-		const GB = 1024 ** 3;
+	it("rejects a total file size exceeding the transfer limit", () => {
+		const half = Math.floor(MAX_TOTAL_BYTES / 2);
 		const input = {
 			...BASE,
 			files: [
-				{ name: "a.bin", relativePath: "a.bin", size: GB },
-				{ name: "b.bin", relativePath: "b.bin", size: GB + 1 },
+				{ name: "a.bin", relativePath: "a.bin", size: half },
+				{ name: "b.bin", relativePath: "b.bin", size: half + 1 },
 			],
 		};
 		expect(schema.safeParse(input).success).toBe(false);
 	});
 
-	it("rejects expiryDays outside 1–7", () => {
+	it("rejects expiryDays outside 1-7", () => {
 		expect(schema.safeParse({ ...BASE, expiryDays: 0 }).success).toBe(false);
 		expect(schema.safeParse({ ...BASE, expiryDays: 8 }).success).toBe(false);
 	});

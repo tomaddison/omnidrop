@@ -1,0 +1,161 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint / format check
+        run: npm run check
+
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Guard against committed LocalStack override
+        run: test ! -f infra/main/backend_override.tf
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.67.1
+
+      - name: Link Supabase project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Apply database migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          # Resolved by config.toml's [db.vault] block during db push - populates
+          # vault.decrypted_secrets so private.get_secret() works at runtime.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: supabase db push
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: gh-deploy-${{ github.run_id }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.5
+          terraform_wrapper: false
+
+      - name: Terraform init
+        run: terraform -chdir=infra/main init -reconfigure -backend-config=backends/production.hcl
+
+      - name: Terraform apply
+        run: |
+          terraform -chdir=infra/main apply -auto-approve \
+            -var-file=envs/prod.tfvars \
+            -var='allowed_origins=["${{ vars.APP_URL }}"]'
+
+      - name: Read Terraform outputs
+        id: tfcreds
+        run: |
+          terraform -chdir=infra/main output -json > /tmp/tf.json
+          APP_AKID=$(jq -r '.app_access_key_id.value' /tmp/tf.json)
+          APP_AKSEC=$(jq -r '.app_secret_access_key.value' /tmp/tf.json)
+          CLN_AKID=$(jq -r '.cleanup_access_key_id.value' /tmp/tf.json)
+          CLN_AKSEC=$(jq -r '.cleanup_secret_access_key.value' /tmp/tf.json)
+          BUCKET=$(jq -r '.bucket_id.value' /tmp/tf.json)
+          for v in "$APP_AKID" "$APP_AKSEC" "$CLN_AKID" "$CLN_AKSEC"; do
+            echo "::add-mask::$v"
+          done
+          {
+            echo "APP_AKID=$APP_AKID"
+            echo "APP_AKSEC=$APP_AKSEC"
+            echo "CLN_AKID=$CLN_AKID"
+            echo "CLN_AKSEC=$CLN_AKSEC"
+            echo "BUCKET=$BUCKET"
+          } >> "$GITHUB_OUTPUT"
+          rm /tmp/tf.json
+
+      - name: Set edge function secrets
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+        run: |
+          supabase secrets set --project-ref "$SUPABASE_PROJECT_REF" \
+            AWS_ACCESS_KEY_ID="${{ steps.tfcreds.outputs.CLN_AKID }}" \
+            AWS_SECRET_ACCESS_KEY="${{ steps.tfcreds.outputs.CLN_AKSEC }}" \
+            AWS_REGION="$AWS_REGION" \
+            S3_BUCKET="${{ steps.tfcreds.outputs.BUCKET }}"
+
+      - name: Deploy cleanup-s3 edge function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: supabase functions deploy cleanup-s3 --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Sync Vercel production env vars
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set_var() {
+            local name="$1"
+            local value="$2"
+            vercel env rm "$name" production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+            printf "%s" "$value" | vercel env add "$name" production --token "$VERCEL_TOKEN"
+          }
+
+          set_var VITE_SUPABASE_URL       "${{ secrets.SUPABASE_URL }}"
+          set_var VITE_SUPABASE_ANON_KEY  "${{ secrets.SUPABASE_ANON_KEY }}"
+          set_var SUPABASE_SECRET_KEY     "${{ secrets.SUPABASE_SECRET_KEY }}"
+          set_var AWS_ACCESS_KEY_ID       "${{ steps.tfcreds.outputs.APP_AKID }}"
+          set_var AWS_SECRET_ACCESS_KEY   "${{ steps.tfcreds.outputs.APP_AKSEC }}"
+          set_var AWS_REGION              "${{ vars.AWS_REGION }}"
+          set_var S3_BUCKET               "${{ steps.tfcreds.outputs.BUCKET }}"
+          set_var RESEND_API_KEY          "${{ secrets.RESEND_API_KEY }}"
+          set_var FROM_EMAIL              "${{ vars.FROM_EMAIL }}"
+          set_var VITE_APP_URL            "${{ vars.APP_URL }}"
+          set_var VITE_TURNSTILE_SITE_KEY "${{ vars.TURNSTILE_SITE_KEY }}"
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel deploy --prod --yes --token "$VERCEL_TOKEN"

@@ -7,7 +7,8 @@ import { Button } from "#/components/ui/button";
 import { FileGlyph } from "#/components/ui/file-glyph";
 import { HI } from "#/components/ui/hi";
 import type { UploadEntry } from "#/features/upload/types";
-import { formatBytes } from "#/lib/format";
+import { groupByTopFolder } from "#/lib/file-groups";
+import { formatBytes, pluralizeFiles } from "#/lib/format";
 
 type FileListProps = {
 	entries: UploadEntry[];
@@ -18,38 +19,6 @@ type FileListProps = {
 	disabled?: boolean;
 };
 
-type Group =
-	| { kind: "file"; entry: UploadEntry }
-	| { kind: "folder"; folder: string; entries: UploadEntry[]; bytes: number };
-
-function groupEntries(entries: UploadEntry[]): Group[] {
-	const folderMap = new Map<string, UploadEntry[]>();
-	const order: (string | { file: UploadEntry })[] = [];
-
-	for (const entry of entries) {
-		const slash = entry.relativePath.indexOf("/");
-		if (slash === -1) {
-			order.push({ file: entry });
-		} else {
-			const folder = entry.relativePath.slice(0, slash);
-			if (!folderMap.has(folder)) {
-				folderMap.set(folder, []);
-				order.push(folder);
-			}
-			folderMap.get(folder)?.push(entry);
-		}
-	}
-
-	return order.map((item) => {
-		if (typeof item === "string") {
-			const folderEntries = folderMap.get(item) ?? [];
-			const bytes = folderEntries.reduce((sum, e) => sum + e.file.size, 0);
-			return { kind: "folder", folder: item, entries: folderEntries, bytes };
-		}
-		return { kind: "file", entry: item.file };
-	});
-}
-
 export function FileList({
 	entries,
 	onRemove,
@@ -58,48 +27,56 @@ export function FileList({
 	onAddFolder,
 	disabled,
 }: FileListProps) {
-	const groups = groupEntries(entries);
+	const groups = groupByTopFolder(
+		entries,
+		(e) => e.relativePath,
+		(e) => e.file.size,
+	);
 
 	return (
-		<div className="flex flex-col overflow-hidden rounded-2xl max-h-[200px] bg-muted">
-			<div className="min-h-0 overflow-y-auto">
+		<div className="flex flex-col rounded-md bg-muted">
+			<div>
 				{groups.map((group, i) => {
 					const key =
 						group.kind === "folder"
 							? `dir:${group.folder}`
-							: group.entry.relativePath;
+							: group.item.relativePath;
 					const onRemoveClick =
 						group.kind === "folder"
 							? () => onRemoveFolder(group.folder)
-							: () => onRemove(group.entry.relativePath);
+							: () => onRemove(group.item.relativePath);
 					const ariaLabel =
 						group.kind === "folder"
 							? `Remove ${group.folder}`
-							: `Remove ${group.entry.relativePath}`;
+							: `Remove ${group.item.relativePath}`;
 
 					return (
 						<div
 							key={key}
 							data-first={i === 0}
-							className="ht-fade-in-fast flex items-center gap-2.5 border-t border-border px-3 py-2.5 data-[first=true]:border-t-0"
+							className="om-fade-in-fast flex items-center gap-2.5 border-t border-border px-3 py-2.5 data-[first=true]:border-t-0"
 						>
 							{group.kind === "folder" ? (
-								<div className="flex size-[30px] shrink-0 items-center justify-center rounded-md bg-background text-muted-foreground">
-									<HI icon={Folder01Icon} size={16} />
+								<div className="flex size-[30px] shrink-0 items-center justify-center rounded-md bg-accent/60 text-muted-foreground">
+									<HI
+										icon={Folder01Icon}
+										className="fill-muted-foreground"
+										size={16}
+									/>
 								</div>
 							) : (
-								<FileGlyph name={group.entry.file.name} size={30} />
+								<FileGlyph name={group.item.file.name} size={30} />
 							)}
 							<div className="min-w-0 flex-1">
 								<div className="truncate text-sm text-foreground">
 									{group.kind === "folder"
 										? group.folder
-										: group.entry.relativePath}
+										: group.item.relativePath}
 								</div>
 								<div className="mt-0.5 text-xs text-muted-foreground">
 									{group.kind === "folder"
-										? `${group.entries.length} ${group.entries.length === 1 ? "file" : "files"} · ${formatBytes(group.bytes)}`
-										: formatBytes(group.entry.file.size)}
+										? `${group.count} ${pluralizeFiles(group.count)} · ${formatBytes(group.bytes)}`
+										: formatBytes(group.item.file.size)}
 								</div>
 							</div>
 							<Button
@@ -117,7 +94,7 @@ export function FileList({
 					);
 				})}
 			</div>
-			<div className="flex border-t-2 border-card gap-0.5 bg-card">
+			<div className="flex border-t-2 border-card rounded-b-xl overflow-hidden gap-0.5 bg-card">
 				<Button
 					type="button"
 					variant="secondary"
@@ -136,7 +113,12 @@ export function FileList({
 					disabled={disabled}
 					className="flex-1 rounded-none border-l border"
 				>
-					<HI icon={Folder01Icon} size={14} /> Add folder
+					<HI
+						icon={Folder01Icon}
+						size={14}
+						className="fill-secondary-foreground"
+					/>{" "}
+					Add folders
 				</Button>
 			</div>
 		</div>

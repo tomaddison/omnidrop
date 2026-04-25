@@ -3,14 +3,14 @@ import {
 	Button,
 	Container,
 	Head,
-	Heading,
-	Hr,
 	Html,
+	Link,
 	Preview,
 	Section,
 	Tailwind,
 	Text,
 } from "@react-email/components";
+import { formatBytes, formatExpiryDate, pluralizeFiles } from "#/lib/format";
 
 type TransferReadyEmailProps = {
 	senderEmail: string;
@@ -19,23 +19,8 @@ type TransferReadyEmailProps = {
 	files: { name: string; size: number }[];
 	downloadUrl: string;
 	expiresAt: string | null;
+	appUrl: string;
 };
-
-function formatBytes(bytes: number): string {
-	if (bytes < 1024) return `${bytes} B`;
-	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	if (bytes < 1024 * 1024 * 1024)
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-	return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
-
-function formatExpiry(iso: string): string {
-	return new Date(iso).toLocaleDateString("en-GB", {
-		year: "numeric",
-		month: "long",
-		day: "numeric",
-	});
-}
 
 export function TransferReadyEmail({
 	senderEmail,
@@ -44,9 +29,13 @@ export function TransferReadyEmail({
 	files,
 	downloadUrl,
 	expiresAt,
+	appUrl,
 }: TransferReadyEmailProps) {
 	const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
-	const fileWord = files.length === 1 ? "file" : "files";
+	const fileWord = pluralizeFiles(files.length);
+	const MAX_LISTED = 5;
+	const visibleFiles = files.slice(0, MAX_LISTED);
+	const remaining = files.length - visibleFiles.length;
 
 	return (
 		<Html>
@@ -55,87 +44,80 @@ export function TransferReadyEmail({
 				{senderEmail} sent you {String(files.length)} {fileWord} via Omnidrop
 			</Preview>
 			<Tailwind>
-				<Body className="bg-[#dce8f5] font-sans">
+				<Body className="font-sans">
 					<Container className="mx-auto max-w-[480px] px-6 py-10">
-						<Heading className="mb-1 text-2xl font-semibold text-[#1a1f16]">
+						<Text className="text-[24px] font-bold mb-8 font-stretch-130%">
+							<Link href={appUrl} className="text-black no-underline">
+								Omnidrop
+							</Link>
+						</Text>
+						<Text className="mb-6 text-[18px] font-semibold leading-6 text-black">
 							{title ?? "You have files to download"}
-						</Heading>
-						<Text className="mb-6 mt-1 text-[15px] leading-6 text-[#4a5240]">
-							From {senderEmail}
+						</Text>
+						<Text className="mb-6 text-[13px] leading-5 text-gray-500">
+							Sent by{" "}
+							<span className="font-medium text-black">{senderEmail}</span>
 						</Text>
 
 						{message && (
-							<Text className="mb-6 text-[15px] leading-6 text-[#4a5240]">
-								{message}
-							</Text>
+							<Section className="mb-6 rounded-xl bg-gray-100 px-5 py-4">
+								<Text className="m-0 text-[15px] leading-6 text-black">
+									{message}
+								</Text>
+							</Section>
 						)}
 
-						<Section className="mb-4 overflow-hidden rounded-[10px] border border-[#c4d8ee] bg-white">
-							{files.map((file, i) => (
+						<Section className="mb-4">
+							{visibleFiles.map((file, i) => (
 								<div
 									// biome-ignore lint/suspicious/noArrayIndexKey: order is stable
 									key={i}
-									style={{
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "space-between",
-										padding: "10px 16px",
-										borderBottom:
-											i < files.length - 1 ? "1px solid #e8eff8" : undefined,
-									}}
+									className={`flex items-center justify-between py-[10px] ${i < visibleFiles.length - 1 || remaining > 0 ? "border-b border-gray-200" : ""}`}
 								>
-									<Text
-										style={{
-											margin: 0,
-											fontSize: 14,
-											color: "#1a1f16",
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											whiteSpace: "nowrap",
-										}}
-									>
+									<Text className="m-0 truncate text-[14px] text-black">
 										{file.name}
 									</Text>
-									<Text
-										style={{
-											margin: "0 0 0 16px",
-											flexShrink: 0,
-											fontSize: 13,
-											color: "#8a9480",
-										}}
-									>
+									<Text className="m-0 ml-4 shrink-0 text-[13px] text-gray-500">
 										{formatBytes(file.size)}
 									</Text>
 								</div>
 							))}
+							{remaining > 0 && (
+								<Text className="m-0 py-[10px] text-[14px] text-gray-500">
+									+ {remaining} more {pluralizeFiles(remaining)}
+								</Text>
+							)}
 						</Section>
 
-						<Text className="mb-6 text-[13px] text-[#8a9480]">
-							{files.length} {fileWord}, {formatBytes(totalBytes)}
-							{expiresAt ? ` · Expires ${formatExpiry(expiresAt)}` : ""}
+						<Text className="mb-6 text-[13px] leading-5 text-gray-500">
+							{files.length} {fileWord} · {formatBytes(totalBytes)}
 						</Text>
 
 						<Button
 							href={downloadUrl}
-							style={{
-								display: "inline-block",
-								borderRadius: 8,
-								backgroundColor: "#1a1f16",
-								padding: "12px 24px",
-								fontSize: 15,
-								fontWeight: 600,
-								color: "#ffffff",
-								textDecoration: "none",
-							}}
+							className="box-border block w-full text-center rounded-xl bg-black px-6 py-3 text-[15px] font-semibold text-white no-underline"
 						>
 							Download files
 						</Button>
-
-						<Hr className="mb-4 mt-8 border-[#c4d8ee]" />
-						<Text className="m-0 text-[13px] text-[#8a9480]">
+						<Text className="mt-8 text-[13px] leading-5 text-black">
 							This link will expire{" "}
-							{expiresAt ? `on ${formatExpiry(expiresAt)}` : "soon"}. Files were
-							shared via Omnidrop.
+							{expiresAt ? `on ${formatExpiryDate(expiresAt)}` : "soon"}. If you
+							weren't expecting this email, you can safely ignore it.
+						</Text>
+						<Text className="mt-2 mb-0 text-[11px] text-gray-500">
+							<Link
+								href={`${appUrl}/privacy`}
+								className="text-gray-500 underline"
+							>
+								Privacy
+							</Link>
+							<span> · </span>
+							<Link
+								href={`${appUrl}/terms`}
+								className="text-gray-500 underline"
+							>
+								Terms
+							</Link>
 						</Text>
 					</Container>
 				</Body>
@@ -143,3 +125,25 @@ export function TransferReadyEmail({
 		</Html>
 	);
 }
+
+TransferReadyEmail.PreviewProps = {
+	senderEmail: "sender@example.com",
+	title: "Project handover",
+	message:
+		"Latest drafts and the full asset pack. Shout if anything is missing.",
+	files: [
+		{ name: "brief.pdf", size: 184_320 },
+		{ name: "logo-pack.zip", size: 12_582_912 },
+		{ name: "walkthrough.mov", size: 284_164_096 },
+		{ name: "style-guide.pdf", size: 2_457_600 },
+		{ name: "hero-shot.png", size: 4_915_200 },
+		{ name: "outtakes.mov", size: 156_237_824 },
+		{ name: "notes.txt", size: 4_096 },
+		{ name: "contract.pdf", size: 312_320 },
+	],
+	downloadUrl: "https://omnidrop.example.com/d/abc123",
+	expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+	appUrl: "https://omnidrop.example.com",
+} satisfies TransferReadyEmailProps;
+
+export default TransferReadyEmail;

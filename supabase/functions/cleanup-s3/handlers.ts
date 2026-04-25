@@ -7,7 +7,7 @@ export async function handleCleanup(): Promise<{
 }> {
 	const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 	const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-	const bucket = Deno.env.get("S3_BUCKET") ?? "ht-transfers";
+	const bucket = Deno.env.get("S3_BUCKET") ?? "omnidrop-transfers";
 
 	const supabase = createClient(supabaseUrl, serviceRoleKey);
 	const s3 = createS3Client();

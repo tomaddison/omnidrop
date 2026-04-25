@@ -1,14 +1,15 @@
 import {
+	CheckmarkCircle02Icon,
 	Clock01Icon,
 	Copy01Icon,
 	Mail01Icon,
+	Tick01Icon,
 	Tick02Icon,
-	Tick04Icon,
 } from "@hugeicons/core-free-icons";
 import { useState } from "react";
 import { Button } from "#/components/ui/button";
 import { HI } from "#/components/ui/hi";
-import { formatBytes } from "#/lib/format";
+import { formatBytes, pluralizeFiles } from "#/lib/format";
 import { cn } from "#/lib/utils";
 
 type Summary = {
@@ -26,25 +27,30 @@ type SuccessViewProps = Summary & {
 
 export function SuccessView(props: SuccessViewProps) {
 	return (
-		<div className="ht-fade-in p-2.5">
-			<SuccessHeader {...props} />
+		<div className="om-fade-in flex h-full flex-col justify-between">
+			<div className="mt-10 px-6 pt-6">
+				<SuccessHeader {...props} />
 
-			{props.variant === "link" ? (
-				<ShareUrl url={props.shareUrl} />
-			) : (
-				<RecipientPill email={props.recipientEmail} />
-			)}
+				{props.variant === "link" ? (
+					<ShareUrl url={props.shareUrl} />
+				) : (
+					<RecipientPill email={props.recipientEmail} />
+				)}
 
-			<ExpiryBadge expiryLabel={props.expiryLabel} />
+				<ExpiryBadge expiryLabel={props.expiryLabel} />
+			</div>
 
-			<Button
-				type="button"
-				variant="secondary"
-				onClick={props.onNewTransfer}
-				className="mt-4 w-full"
-			>
-				Send another
-			</Button>
+			<div className="p-2.5">
+				<Button
+					type="button"
+					variant="secondary"
+					size="xl"
+					onClick={props.onNewTransfer}
+					className="w-full"
+				>
+					Send another
+				</Button>
+			</div>
 		</div>
 	);
 }
@@ -55,19 +61,23 @@ function SuccessHeader(props: Summary & (LinkVariant | EmailVariant)) {
 		<div className="flex flex-col items-center px-0 pt-2.5 pb-4">
 			<div
 				className={cn(
-					"ht-pop flex size-12 items-center justify-center rounded-full text-primary",
-					isLink ? "bg-green-600" : "bg-accent",
+					"om-pop flex size-12 items-center justify-center rounded-full text-primary bg-emerald-800",
 				)}
 			>
 				{isLink ? (
 					<HI
-						icon={Tick04Icon}
+						icon={Tick01Icon}
 						size={24}
-						strokeWidth={0}
-						className="fill-background"
+						strokeWidth={3}
+						className="text-emerald-300"
 					/>
 				) : (
-					<HI icon={Mail01Icon} size={24} strokeWidth={1.8} />
+					<HI
+						icon={Mail01Icon}
+						size={24}
+						strokeWidth={1.8}
+						className="text-emerald-300"
+					/>
 				)}
 			</div>
 			<div className="mt-3.5 text-md font-medium tracking-[-0.01em] text-foreground">
@@ -75,7 +85,7 @@ function SuccessHeader(props: Summary & (LinkVariant | EmailVariant)) {
 			</div>
 			<div className="mt-1 text-center text-sm text-muted-foreground">
 				{!isLink && "1 recipient · "}
-				{props.filesCount} {props.filesCount === 1 ? "file" : "files"} ·{" "}
+				{props.filesCount} {pluralizeFiles(props.filesCount)} ·{" "}
 				{formatBytes(props.totalBytes)}
 			</div>
 		</div>
@@ -138,19 +148,17 @@ function ShareUrl({ url }: { url: string }) {
 function RecipientPill({ email }: { email: string }) {
 	return (
 		<div className="rounded-2xl bg-muted p-3">
-			<div className="mb-2 text-xs tracking-[0.08em] text-muted-foreground uppercase">
-				Sent to
-			</div>
+			<div className="mb-2 text-xs text-muted-foreground">Sent to</div>
 			<div className="flex items-center gap-2.5 text-sm text-foreground">
-				<div className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-background text-2xs font-medium text-muted-foreground">
+				<div className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-accent text-2xs font-medium text-muted-foreground">
 					{email.slice(0, 1).toUpperCase()}
 				</div>
 				<span className="flex-1 truncate">{email}</span>
 				<HI
-					icon={Tick02Icon}
+					icon={CheckmarkCircle02Icon}
 					size={14}
 					strokeWidth={2}
-					className="text-primary"
+					className="text-emerald-300"
 				/>
 			</div>
 		</div>

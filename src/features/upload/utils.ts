@@ -1,14 +1,19 @@
+import limits from "../../../limits.json";
 import type { UploadEntry } from "./types";
 
-// 2 GB matches the S3 presigned-POST content-length-range ceiling we enforce
-// server-side. Raising this also means raising the ranges on the free tier.
-export const MAX_TOTAL_BYTES = 2 * 1024 ** 3;
+// Source of truth: /limits.json (also read by Terraform for the S3 bucket policy).
+export const MAX_TRANSFER_GB = limits.maxTransferGb;
+export const MAX_TOTAL_BYTES = MAX_TRANSFER_GB * 1024 ** 3;
+export const MAX_TRANSFER_LABEL = `${MAX_TRANSFER_GB} GB`;
 export const MAX_PATH_LENGTH = 1024;
 export const MAX_SEGMENT_LENGTH = 255;
 export const MAX_DEPTH = 32;
 
+// 10 MB ≥ S3's 5 MB minimum for non-final parts, and small enough to keep LocalStack's per-request buffer modest.
+export const PART_SIZE = 10 * 1024 * 1024;
+export const MAX_CONCURRENT_PARTS = 3;
+
 // OS-generated bookkeeping files that appear silently when users drop folders.
-// Uploading them wastes quota and clutters the download manifest.
 const SKIP_BASENAMES: ReadonlySet<string> = new Set([
 	".DS_Store",
 	"Thumbs.db",
@@ -34,7 +39,10 @@ export function validateRelativePath(raw: string): ValidationResult {
 
 	// Bidi overrides and zero-width characters can disguise file extensions.
 	if (/[\u200B-\u200D\u202A-\u202E\u2066-\u2069\uFEFF]/.test(p))
-		return { ok: false, reason: "Path contains a prohibited Unicode character." };
+		return {
+			ok: false,
+			reason: "Path contains a prohibited Unicode character.",
+		};
 
 	for (let i = 0; i < p.length; i++) {
 		const code = p.charCodeAt(i);
@@ -138,4 +146,14 @@ async function readAllChildren(
 function basename(path: string): string {
 	const i = path.lastIndexOf("/");
 	return i === -1 ? path : path.slice(i + 1);
+}
+
+export function titleFromEntries(entries: UploadEntry[]): string {
+	const first = entries[0];
+	if (!first) return "";
+	const slash = first.relativePath.indexOf("/");
+	if (slash > 0) return first.relativePath.slice(0, slash);
+	const name = first.file.name;
+	const dot = name.lastIndexOf(".");
+	return dot > 0 ? name.slice(0, dot) : name;
 }

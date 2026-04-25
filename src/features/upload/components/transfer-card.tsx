@@ -1,22 +1,21 @@
-import { useState } from "react";
-import { useTurnstileToken } from "#/features/security/hooks/use-turnstile-token";
+import { useRef, useState } from "react";
+import { OtpInput } from "#/features/authentication/components/otp-input";
+import {
+	Turnstile,
+	type TurnstileHandle,
+} from "#/features/authentication/components/turnstile";
+import { loginWithOtp } from "#/features/authentication/data/server/login-with-otp";
+import { useAuth } from "#/features/authentication/provider";
 import { useBlockUnload } from "#/features/upload/hooks/use-block-unload";
 import { useFilePickers } from "#/features/upload/hooks/use-file-pickers";
+import { useTransferForm } from "#/features/upload/hooks/use-transfer-form";
 import { useUpload } from "#/features/upload/hooks/use-upload";
 import type { UploadEntry } from "#/features/upload/types";
-import { MAX_TOTAL_BYTES } from "#/features/upload/utils";
-import { OtpInput } from "#/features/verification/components/otp-input";
-import { requestOtp } from "#/features/verification/data/mutations/functions/request-otp";
-import {
-	EXPIRY_OPTIONS,
-	type ExpiryDays,
-	ExpiryPopover,
-} from "./expiry/expiry-popover";
+import { EXPIRY_OPTIONS, ExpiryPopover } from "./expiry/expiry-popover";
 import { SuccessView } from "./transfer-card/success-view";
 import { type Mode, TabSwitcher } from "./transfer-card/tab-switcher";
 import { TransferForm } from "./transfer-card/transfer-form";
 import { UploadingView } from "./transfer-card/uploading-view";
-import { formSchema } from "./transfer-card/validation";
 
 type Step = "form" | "otp" | "uploading" | "complete";
 
@@ -37,19 +36,19 @@ export function TransferCard({
 }: TransferCardProps) {
 	const [mode, setMode] = useState<Mode>("link");
 	const [step, setStep] = useState<Step>("form");
-
-	const [yourEmail, setYourEmail] = useState("");
-	const [recipientEmail, setRecipientEmail] = useState("");
-	const [title, setTitle] = useState("");
-	const [message, setMessage] = useState("");
-	const [expiryDays, setExpiryDays] = useState<ExpiryDays>(7);
-
 	const [isPendingOtp, setIsPendingOtp] = useState(false);
 	const [otpError, setOtpError] = useState<string | null>(null);
+	const turnstileRef = useRef<TurnstileHandle>(null);
 
-	// Turnstile lives at the card level so the invisible widget survives across
-	// form → otp → uploading step changes; remounting would reset the challenge.
-	const turnstile = useTurnstileToken();
+	const { user, refresh: refreshAuth } = useAuth();
+	const signedIn = user !== null;
+
+	const form = useTransferForm({
+		mode,
+		entries,
+		signedInEmail: user?.email ?? null,
+	});
+
 	const upload = useUpload();
 	const pickers = useFilePickers({ onPick: addEntries });
 
@@ -58,35 +57,40 @@ export function TransferCard({
 	function reset() {
 		setMode("link");
 		setStep("form");
-		setYourEmail("");
-		setRecipientEmail("");
-		setTitle("");
-		setMessage("");
-		setExpiryDays(7);
-		clearEntries();
 		setOtpError(null);
+		form.reset();
+		clearEntries();
 		upload.reset();
+	}
+
+	async function startUpload() {
+		setStep("uploading");
+		const outcome = await upload.start({
+			mode,
+			expiryDays: form.expiryDays,
+			recipientEmail: form.recipientEmail,
+			title: form.title,
+			message: form.message,
+			entries,
+		});
+		if (outcome === "complete") setStep("complete");
+		else if (outcome === "aborted") reset();
 	}
 
 	async function handleSubmit(event: React.FormEvent) {
 		event.preventDefault();
-		const parsed = formSchema.safeParse({ mode, yourEmail, recipientEmail });
-		if (!parsed.success) {
-			setOtpError(
-				parsed.error.issues[0]?.message ?? "Please check your inputs.",
-			);
-			return;
-		}
-		const totalBytes = entries.reduce((sum, entry) => sum + entry.file.size, 0);
-		if (totalBytes > MAX_TOTAL_BYTES) {
-			setOtpError("Transfers are limited to 2GB.");
+		if (form.formError !== null) return;
+		if (signedIn) {
+			await startUpload();
 			return;
 		}
 		setIsPendingOtp(true);
 		setOtpError(null);
 		try {
-			const turnstileToken = await turnstile.consume();
-			await requestOtp({ data: { email: yourEmail, turnstileToken } });
+			const captchaToken = await turnstileRef.current?.getToken();
+			await loginWithOtp({
+				data: { email: form.yourEmail, captchaToken },
+			});
 			setStep("otp");
 		} catch (err) {
 			setOtpError(err instanceof Error ? err.message : "Something went wrong.");
@@ -95,41 +99,24 @@ export function TransferCard({
 		}
 	}
 
-	async function handleOtpVerified(uploadToken: string) {
-		setStep("uploading");
-		const turnstileToken = await turnstile.consume();
-		const outcome = await upload.start({
-			uploadToken,
-			turnstileToken,
-			mode,
-			expiryDays,
-			recipientEmail,
-			title,
-			message,
-			entries,
-		});
-		if (outcome === "complete") setStep("complete");
-		else if (!upload.error) reset();
+	async function handleOtpVerified() {
+		await refreshAuth();
+		await startUpload();
 	}
 
-	const totalBytes = entries.reduce((sum, entry) => sum + entry.file.size, 0);
 	const expiryLabel =
-		EXPIRY_OPTIONS.find((option) => option.id === expiryDays)?.label ??
-		`${expiryDays} days`;
-	const ready =
-		entries.length > 0 &&
-		formSchema.safeParse({ mode, yourEmail, recipientEmail }).success;
+		EXPIRY_OPTIONS.find((option) => option.id === form.expiryDays)?.label ??
+		`${form.expiryDays} days`;
 
 	const submitLabel = isPendingOtp
 		? "Sending code..."
 		: mode === "link"
 			? "Get a link"
-			: "Send transfer";
+			: "Transfer";
 
 	return (
-		<div className="ht-fade-in relative z-3 flex h-[500px] w-[300px] flex-col shadow-xl shadow-black/50 rounded-3xl bg-card">
+		<div className="om-fade-in overflow-hidden relative z-3 flex h-[470px] w-[320px] flex-col shadow-xl shadow-black/50 rounded-xl bg-card">
 			{pickers.inputs}
-			{turnstile.widget}
 
 			{step === "form" && (
 				<TransferForm disabled={isPendingOtp} onSubmit={handleSubmit}>
@@ -141,25 +128,32 @@ export function TransferCard({
 								onAddFolder={pickers.openFolder}
 								onRemoveEntry={removeEntry}
 								onRemoveFolder={removeFolder}
+								anchorRef={form.filesAnchorRef}
 							/>
 						}
 					>
 						<TransferForm.Recipient
 							show={mode === "email"}
-							value={recipientEmail}
-							onChange={setRecipientEmail}
+							value={form.recipientEmail}
+							onChange={form.setRecipientEmail}
+							anchorRef={form.recipientEmailAnchorRef}
 						/>
 						<TransferForm.Fields
-							yourEmail={yourEmail}
-							onYourEmailChange={setYourEmail}
-							title={title}
-							onTitleChange={setTitle}
-							message={message}
-							onMessageChange={setMessage}
+							yourEmail={form.yourEmail}
+							onYourEmailChange={form.setYourEmail}
+							yourEmailLocked={signedIn}
+							title={form.title}
+							onTitleChange={form.setTitle}
+							message={form.message}
+							onMessageChange={form.setMessage}
+							yourEmailAnchorRef={form.yourEmailAnchorRef}
 						/>
 					</TransferForm.Body>
+					{!signedIn && <Turnstile ref={turnstileRef} />}
 					<TransferForm.Footer
-						ready={ready}
+						ready={form.ready}
+						formError={form.formError}
+						formErrorAnchorRef={form.formErrorAnchorRef}
 						error={otpError}
 						submitLabel={submitLabel}
 						showSubmitArrow={!isPendingOtp}
@@ -169,15 +163,18 @@ export function TransferCard({
 							onChange={setMode}
 							disabled={isPendingOtp}
 						/>
-						<ExpiryPopover value={expiryDays} onChange={setExpiryDays} />
+						<ExpiryPopover
+							value={form.expiryDays}
+							onChange={form.setExpiryDays}
+						/>
 					</TransferForm.Footer>
 				</TransferForm>
 			)}
 
 			{step === "otp" && (
-				<div className="ht-fade-in-fast p-3">
+				<div className="om-fade-in-fast h-full flex items-center p-6">
 					<OtpInput
-						email={yourEmail}
+						email={form.yourEmail}
 						onSuccess={handleOtpVerified}
 						onBack={() => setStep("form")}
 					/>
@@ -187,6 +184,9 @@ export function TransferCard({
 			{step === "uploading" && (
 				<UploadingView
 					progress={upload.progress}
+					bytesLoaded={upload.bytesLoaded}
+					totalBytes={upload.totalBytes}
+					filesCount={entries.length}
 					error={upload.error}
 					onCancel={upload.cancel}
 					onRetry={reset}
@@ -200,16 +200,16 @@ export function TransferCard({
 						variant="link"
 						shareUrl={`${import.meta.env.VITE_APP_URL ?? ""}/d/${upload.transferSlug}`}
 						filesCount={entries.length}
-						totalBytes={totalBytes}
+						totalBytes={form.totalBytes}
 						expiryLabel={expiryLabel}
 						onNewTransfer={reset}
 					/>
 				) : (
 					<SuccessView
 						variant="email"
-						recipientEmail={recipientEmail}
+						recipientEmail={form.recipientEmail}
 						filesCount={entries.length}
-						totalBytes={totalBytes}
+						totalBytes={form.totalBytes}
 						expiryLabel={expiryLabel}
 						onNewTransfer={reset}
 					/>

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { ScrollArea } from "#/components/ui/scroll-area";
+import { TooltipProvider } from "#/components/ui/tooltip";
 import { TransferFormProvider } from "./form-context";
 import { FormFields } from "./form-fields";
 import { FormFiles } from "./form-files";
@@ -17,9 +19,11 @@ function TransferFormRoot({ disabled, onSubmit, children }: TransferFormProps) {
 
 	return (
 		<TransferFormProvider value={contextValue}>
-			<form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-				{children}
-			</form>
+			<TooltipProvider>
+				<form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+					{children}
+				</form>
+			</TooltipProvider>
 		</TransferFormProvider>
 	);
 }
@@ -31,11 +35,11 @@ type BodyProps = {
 
 function FormBody({ files, children }: BodyProps) {
 	return (
-		<div className="flex min-h-0 flex-1 flex-col p-2.5">
-			<div className="shrink-0">{files}</div>
-			<div className="mt-4 flex min-h-0 flex-1 flex-col overflow-y-auto px-2">
-				{children}
-			</div>
+		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+			<ScrollArea className="flex min-h-0 flex-1 flex-col">
+				<div className="p-2.5">{files}</div>
+				<div className="flex flex-col px-4 pb-2">{children}</div>
+			</ScrollArea>
 		</div>
 	);
 }

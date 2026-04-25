@@ -1,3 +1,7 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /d/
+
+# Sitemap is generated at build time and served at /sitemap.xml.
+# Submit the full URL in Google Search Console / Bing Webmaster Tools.

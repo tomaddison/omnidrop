@@ -25,7 +25,9 @@ todos.json
 .claude/
 
 # Terraform local state + cached providers
-infra/.terraform/
+infra/main/.terraform/
+infra/bootstrap/.terraform/
+infra/main/backend_override.tf
 *.tfplan
 terraform.tfstate
 terraform.tfstate.backup*
