@@ -1,9 +1,11 @@
-import { cn } from "#/lib/utils";
 import { MAX_TRANSFER_GB } from "#/features/upload/utils";
+import { cn } from "#/lib/utils";
 
 export function HeroCopy({ className }: { className?: string }) {
 	return (
-		<div className={cn("om-fade-in max-w-[600px] flex-1 px-6 md:px-14", className)}>
+		<div
+			className={cn("om-fade-in max-w-[600px] flex-1 px-6 md:px-14", className)}
+		>
 			<h1 className="m-0 text-[56px] leading-[1.02] text-fg-0 md:text-[68px]">
 				<span className="font-medium tracking-tighter">Send anything.</span>
 				<br />
