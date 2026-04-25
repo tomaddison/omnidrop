@@ -1,7 +1,7 @@
-import { TransferReadyEmail } from "#/emails/transfer-ready";
 import { createServerFn } from "@tanstack/react-start";
 import { Resend } from "resend";
 import { z } from "zod";
+import { TransferReadyEmail } from "#/emails/transfer-ready";
 import { createServiceClient } from "../../../../../../supabase/utils/server";
 import { createAuthClient } from "../../../../../../supabase/utils/server-auth";
 
@@ -68,7 +68,10 @@ export const finalizeTransferFn = createServerFn({ method: "POST" })
 			const apiKey = process.env.RESEND_API_KEY;
 			const fromEmail = process.env.FROM_EMAIL ?? "no-reply@example.com";
 
-			if (process.env.NODE_ENV === "production" && (!apiKey || apiKey === "dev")) {
+			if (
+				process.env.NODE_ENV === "production" &&
+				(!apiKey || apiKey === "dev")
+			) {
 				throw new Error("RESEND_API_KEY must be set in production.");
 			}
 

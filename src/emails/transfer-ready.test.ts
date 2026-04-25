@@ -8,7 +8,7 @@ describe("TransferReadyEmail", () => {
 			TransferReadyEmail({
 				senderEmail: "alice@example.com",
 				title: '<script>alert("title")</script>',
-				message: '<img src=x onerror="fetch(\'//evil\')">',
+				message: "<img src=x onerror=\"fetch('//evil')\">",
 				files: [{ name: "report.pdf", size: 1024 }],
 				downloadUrl: "https://omnidrop.example/d/abc123",
 				expiresAt: new Date("2030-01-01").toISOString(),

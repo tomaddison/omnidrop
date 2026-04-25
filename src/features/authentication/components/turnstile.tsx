@@ -83,7 +83,9 @@ export function Turnstile({ ref }: { ref?: Ref<TurnstileHandle> }) {
 					},
 				});
 			})
-			.catch(() => pendingRef.current?.reject(new Error("Captcha unavailable.")));
+			.catch(() =>
+				pendingRef.current?.reject(new Error("Captcha unavailable.")),
+			);
 
 		return () => {
 			cancelled = true;
