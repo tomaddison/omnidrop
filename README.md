@@ -1,10 +1,8 @@
 # Omnidrop
 
-## Send anything. Fast.
+Omnidrop is a web application for sending large files. Sign in with a 6-digit code and send up to 4 GB per transfer via a shareable link or direct email.
 
 <img width="1400" height="735" alt="hero" src="https://github.com/user-attachments/assets/7f0234b1-4d23-415b-9340-8da34b8ea217" />
-
-Omnidrop is a web application for sending large files. Sign in with a 6-digit code and send up to 4 GB per transfer via a shareable link or direct email.
 
 ## Features
 
