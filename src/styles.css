@@ -43,13 +43,13 @@
 
 .dark {
   /* Omnidrop palette - cool blue-black surfaces, white primary */
-  --bg-0: #0b0d10;
-  --bg-1: #12151a;
-  --bg-2: #181c22;
-  --bg-3: #20242c;
-  --bg-4: #2a2f38;
-  --pill: #1e232b;
-  --pill-hover: #232a33;
+  --bg-0: oklch(0.158 0.007 265);
+  --bg-1: oklch(0.220 0.015 265);
+  --bg-2: oklch(0.268 0.018 265);
+  --bg-3: oklch(0.308 0.018 265);
+  --bg-4: oklch(0.351 0.021 265);
+  --pill: oklch(0.268 0.018 265);
+  --pill-hover: oklch(0.310 0.018 265);
   --fg-0: #f3f5f7;
   --fg-1: #dfe3e8;
   --fg-2: #9aa1ad;
@@ -58,7 +58,7 @@
   --accent-raw: #ffffff;
   --accent-hover: #f3f5f7;
   --accent-ink: #0b0d10;
-  --accent-ghost: rgba(255, 255, 255, 0.08);
+  --accent-ghost: oklch(0.4 0.018 265);
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
 
   /* shadcn semantic tokens mapped onto the Omnidrop palette */
@@ -66,11 +66,11 @@
   --foreground: var(--fg-1);
   --card: var(--bg-1);
   --card-foreground: var(--fg-1);
-  --popover: var(--bg-2);
+  --popover: var(--bg-1);
   --popover-foreground: var(--fg-1);
   --primary: var(--accent-raw);
   --primary-foreground: var(--accent-ink);
-  --secondary: var(--bg-2);
+  --secondary: var(--pill);
   --secondary-foreground: var(--fg-1);
   --muted: var(--bg-2);
   --muted-foreground: var(--fg-3);

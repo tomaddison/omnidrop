@@ -24,10 +24,10 @@ export function TabSwitcher({ mode, onChange, disabled }: TabSwitcherProps) {
 			onValueChange={(next) => {
 				if (isMode(next)) onChange(next);
 			}}
-			className="h-9 flex-1 rounded-xl bg-secondary p-[3px]"
+			className="h-9 flex-1 rounded-xl bg-[oklch(0.19_0.013_265)] p-[3px]"
 		>
 			<Tabs.List className="relative flex h-full w-full">
-				<Tabs.Indicator className="absolute top-0 left-0 h-full w-(--active-tab-width) rounded-[0.7rem] bg-accent transform-[translateX(var(--active-tab-left))] transition-[transform,width] ease-[cubic-bezier(0.32,0.72,0,1)]" />
+				<Tabs.Indicator className="absolute top-0 left-0 h-full w-(--active-tab-width) rounded-[0.7rem] bg-pill transform-[translateX(var(--active-tab-left))] transition-[transform,width] ease-[cubic-bezier(0.32,0.72,0,1)]" />
 				{TABS.map((tab) => (
 					<Tabs.Tab
 						key={tab.id}

@@ -75,26 +75,42 @@ function DownloadPage() {
 				data: { slug: transfer.slug },
 			});
 
-			const files = await Promise.all(
-				urls.map(async ({ url, name }) => {
-					const response = await fetch(url);
-					if (!response.ok) throw new Error(`Failed to fetch ${name}`);
-					return { name, buffer: await response.arrayBuffer() };
-				}),
-			);
+			if (urls.length === 1) {
+				const { url, name } = urls[0];
+				const response = await fetch(url);
+				if (!response.ok) throw new Error(`Failed to fetch ${name}`);
+				const blob = await response.blob();
+				const filename = name.split("/").pop() ?? name;
+				const blobUrl = URL.createObjectURL(blob);
+				const link = document.createElement("a");
+				link.href = blobUrl;
+				link.download = filename;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				URL.revokeObjectURL(blobUrl);
+			} else {
+				const files = await Promise.all(
+					urls.map(async ({ url, name }) => {
+						const response = await fetch(url);
+						if (!response.ok) throw new Error(`Failed to fetch ${name}`);
+						return { name, buffer: await response.arrayBuffer() };
+					}),
+				);
 
-			const zip = new JSZip();
-			for (const { name, buffer } of files) zip.file(name, buffer);
-			const blob = await zip.generateAsync({ type: "blob" });
+				const zip = new JSZip();
+				for (const { name, buffer } of files) zip.file(name, buffer);
+				const blob = await zip.generateAsync({ type: "blob" });
 
-			const blobUrl = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = blobUrl;
-			link.download = `${toZipName(transfer.title, transfer.slug)}.zip`;
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-			URL.revokeObjectURL(blobUrl);
+				const blobUrl = URL.createObjectURL(blob);
+				const link = document.createElement("a");
+				link.href = blobUrl;
+				link.download = `${toZipName(transfer.title, transfer.slug)}.zip`;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				URL.revokeObjectURL(blobUrl);
+			}
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Download failed.");
 		} finally {

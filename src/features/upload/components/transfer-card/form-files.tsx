@@ -47,7 +47,7 @@ export function FormFiles({
 				variant="secondary"
 				onClick={onAddFiles}
 				disabled={disabled}
-				className="h-20 flex-col gap-1.5 px-3 rounded-xl"
+				className="h-20 flex-col gap-1.5 px-3 rounded-xl [&>span>span]:flex-col"
 			>
 				<div className="flex size-6 items-center justify-center rounded-full bg-accent">
 					<HI icon={PlusSignIcon} size={14} strokeWidth={2.5} />
@@ -59,7 +59,7 @@ export function FormFiles({
 				variant="secondary"
 				onClick={onAddFolder}
 				disabled={disabled}
-				className="h-20 flex-col gap-1.5 px-3 rounded-xl"
+				className="h-20 flex-col gap-1.5 px-3 rounded-xl [&>span>span]:flex-col"
 			>
 				<div className="flex size-6 items-center justify-center">
 					<HI
