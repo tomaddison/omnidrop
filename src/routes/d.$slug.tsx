@@ -191,12 +191,10 @@ function DownloadPage() {
 								type="button"
 								size="xl"
 								onClick={handleDownload}
-								disabled={isPreparing}
+								isLoading={isPreparing}
 								className="w-full"
 							>
-								{isPreparing
-									? "Preparing..."
-									: `Download (${formatBytes(totalBytes)})`}
+								{`Download (${formatBytes(totalBytes)})`}
 							</Button>
 						</div>
 					</div>

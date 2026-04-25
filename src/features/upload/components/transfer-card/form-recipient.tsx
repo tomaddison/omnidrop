@@ -23,8 +23,10 @@ export function FormRecipient({
 	return (
 		<div
 			className={cn(
-				"grid shrink-0 transition-[grid-template-rows] duration-300 ease-out",
-				show ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+				"grid shrink-0 transition-all duration-250",
+				show
+					? "grid-rows-[1fr] opacity-100 scale-100"
+					: "grid-rows-[0fr] opacity-0 scale-95",
 			)}
 			aria-hidden={!show}
 			inert={!show}

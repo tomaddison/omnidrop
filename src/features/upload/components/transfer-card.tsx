@@ -108,11 +108,7 @@ export function TransferCard({
 		EXPIRY_OPTIONS.find((option) => option.id === form.expiryDays)?.label ??
 		`${form.expiryDays} days`;
 
-	const submitLabel = isPendingOtp
-		? "Sending code..."
-		: mode === "link"
-			? "Get a link"
-			: "Transfer";
+	const submitLabel = mode === "link" ? "Get a link" : "Transfer";
 
 	return (
 		<div className="om-fade-in overflow-hidden relative z-3 flex h-[470px] w-[320px] flex-col shadow-xl shadow-black/50 rounded-xl bg-card">
@@ -151,12 +147,11 @@ export function TransferCard({
 					</TransferForm.Body>
 					{!signedIn && <Turnstile ref={turnstileRef} />}
 					<TransferForm.Footer
-						ready={form.ready}
 						formError={form.formError}
 						formErrorAnchorRef={form.formErrorAnchorRef}
 						error={otpError}
 						submitLabel={submitLabel}
-						showSubmitArrow={!isPendingOtp}
+						isLoading={isPendingOtp}
 					>
 						<TabSwitcher
 							mode={mode}

@@ -67,10 +67,12 @@ export function OtpInput({ email, onSuccess, onBack }: OtpInputProps) {
 			)}
 			<Button
 				type="submit"
-				disabled={isPending || code.length < OTP_LENGTH}
+				size={"lg"}
+				disabled={code.length < OTP_LENGTH}
+				isLoading={isPending}
 				className="w-full"
 			>
-				{isPending ? "Verifying..." : "Verify code"}
+				Verify code
 			</Button>
 			<Button
 				type="button"

@@ -2,12 +2,14 @@
 
 Omnidrop is a web application for sending large files. Sign in with a 6-digit code and send up to 4 GB per transfer via a shareable link or direct email.
 
+Live demo: [omnidrop.tomaddison.com](https://omnidrop.tomaddison.com)
+
 <img width="1400" height="735" alt="hero" src="https://github.com/user-attachments/assets/7f0234b1-4d23-415b-9340-8da34b8ea217" />
 
 ## Features
 
-- Drag-and-drop uploads with presigned POST and live progress
-- Sign-in via Supabase Auth (email OTP - first verification creates the account)
+- Drag-and-drop uploads with live progress
+- Sign-in with 6-digit email verification code
 - 20 transfers per calendar month per signed-in user
 - Two sharing modes: shareable link or email delivery
 - Configurable expiry (1 / 3 / 7 days)

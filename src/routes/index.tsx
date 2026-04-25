@@ -1,7 +1,5 @@
-import { Download01Icon } from "@hugeicons/core-free-icons";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HI } from "#/components/ui/hi";
 import { Stage } from "#/features/branding/stage";
 import { TopBar } from "#/features/branding/top-bar";
 import { absoluteUrl, getOrigin, SITE } from "#/features/seo/config";

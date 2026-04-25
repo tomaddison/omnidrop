@@ -1,4 +1,4 @@
-import { AlertCircleIcon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { AlertCircleIcon } from "@hugeicons/core-free-icons";
 import { type ReactNode, type RefObject, useState } from "react";
 import { Button } from "#/components/ui/button";
 import { HI } from "#/components/ui/hi";
@@ -11,22 +11,20 @@ import { useTransferFormContext } from "./form-context";
 import type { FormError } from "./validation";
 
 type FormFooterProps = {
-	ready: boolean;
 	formError: FormError;
 	formErrorAnchorRef: RefObject<HTMLElement | null> | null;
 	error: string | null;
 	submitLabel: string;
-	showSubmitArrow?: boolean;
+	isLoading?: boolean;
 	children: ReactNode;
 };
 
 export function FormFooter({
-	ready,
 	formError,
 	formErrorAnchorRef,
 	error,
 	submitLabel,
-	showSubmitArrow = true,
+	isLoading = false,
 	children,
 }: FormFooterProps) {
 	const { disabled } = useTransferFormContext();
@@ -65,15 +63,13 @@ export function FormFooter({
 							type="submit"
 							size="xl"
 							disabled={disabled}
+							isLoading={isLoading}
 							onClick={handleSubmitClick}
 							className="mt-3.5 w-full shrink-0"
 						/>
 					}
 				>
 					{submitLabel}
-					{ready && !disabled && showSubmitArrow && (
-						<HI icon={ArrowRight01Icon} size={16} strokeWidth={2} />
-					)}
 				</PopoverTrigger>
 				{formError !== null && (
 					<PopoverContent

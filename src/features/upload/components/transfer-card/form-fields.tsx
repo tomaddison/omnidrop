@@ -1,5 +1,4 @@
 import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
-import { Check } from "lucide-react";
 import type { Ref } from "react";
 import { HI } from "#/components/ui/hi";
 import { useTransferFormContext } from "./form-context";
