@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createAuthClient } from "../../../../../supabase/utils/server-auth";
+import { createAuthClient } from "~/supabase/utils/server-auth";
 import { LoginOtpSchema } from "../schema";
 
 export const verifyLoginOtp = createServerFn({ method: "POST" })

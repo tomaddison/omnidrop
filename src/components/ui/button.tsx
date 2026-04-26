@@ -2,7 +2,7 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { Loading03Icon } from "@hugeicons/core-free-icons";
 import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from "#/lib/utils";
+import { cn } from "@/lib/utils";
 import { HI } from "./hi";
 
 const buttonVariants = cva(

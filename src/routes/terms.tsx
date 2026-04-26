@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { LegalPage } from "#/features/branding/legal-page";
-import { absoluteUrl, getOrigin } from "#/features/seo/config";
-import { MAX_TRANSFER_LABEL } from "#/features/upload/utils";
+import { LegalPage } from "@/features/branding/legal-page";
+import { absoluteUrl, getOrigin } from "@/features/seo/config";
+import { MAX_TRANSFER_LABEL } from "@/features/upload/utils";
 
 const TITLE = "Terms of Service · Omnidrop";
 const DESCRIPTION =

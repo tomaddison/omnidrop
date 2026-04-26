@@ -1,6 +1,6 @@
 import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import type { Ref } from "react";
-import { HI } from "#/components/ui/hi";
+import { HI } from "@/components/ui/hi";
 import { useTransferFormContext } from "./form-context";
 import { InputRow } from "./input-row";
 

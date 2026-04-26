@@ -7,10 +7,10 @@ import {
 	Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { useState } from "react";
-import { Button } from "#/components/ui/button";
-import { HI } from "#/components/ui/hi";
-import { formatBytes, pluralizeFiles } from "#/lib/format";
-import { cn } from "#/lib/utils";
+import { Button } from "@/components/ui/button";
+import { HI } from "@/components/ui/hi";
+import { formatBytes, pluralizeFiles } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 type Summary = {
 	filesCount: number;

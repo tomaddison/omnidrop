@@ -3,12 +3,12 @@ import {
 	Folder01Icon,
 	PlusSignIcon,
 } from "@hugeicons/core-free-icons";
-import { Button } from "#/components/ui/button";
-import { FileGlyph } from "#/components/ui/file-glyph";
-import { HI } from "#/components/ui/hi";
-import type { UploadEntry } from "#/features/upload/types";
-import { groupByTopFolder } from "#/lib/file-groups";
-import { formatBytes, pluralizeFiles } from "#/lib/format";
+import { Button } from "@/components/ui/button";
+import { FileGlyph } from "@/components/ui/file-glyph";
+import { HI } from "@/components/ui/hi";
+import type { UploadEntry } from "@/features/upload/types";
+import { groupByTopFolder } from "@/lib/file-groups";
+import { formatBytes, pluralizeFiles } from "@/lib/format";
 
 type FileListProps = {
 	entries: UploadEntry[];

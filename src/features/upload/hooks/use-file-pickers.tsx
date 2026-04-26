@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useRef } from "react";
-import type { UploadEntry } from "#/features/upload/types";
-import { filesFromInput } from "#/features/upload/utils";
+import type { UploadEntry } from "@/features/upload/types";
+import { filesFromInput } from "@/features/upload/utils";
 
 type UseFilePickers = {
 	inputs: ReactNode;

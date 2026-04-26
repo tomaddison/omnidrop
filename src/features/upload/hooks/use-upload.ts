@@ -1,16 +1,17 @@
 import { useCallback, useRef, useState } from "react";
-import { completeMultipartFn } from "#/features/upload/data/mutations/functions/complete-multipart";
-import { createTransferFn } from "#/features/upload/data/mutations/functions/create-transfer";
-import { finalizeTransferFn } from "#/features/upload/data/mutations/functions/finalize-transfer";
-import { uploadMultipartToS3 } from "#/features/upload/s3-client";
-import type { UploadEntry } from "#/features/upload/types";
-
-export type UploadMode = "link" | "email";
-export type UploadExpiryDays = 1 | 3 | 7;
+import { completeMultipartFn } from "@/features/upload/data/mutations/functions/complete-multipart";
+import { createTransferFn } from "@/features/upload/data/mutations/functions/create-transfer";
+import { finalizeTransferFn } from "@/features/upload/data/mutations/functions/finalize-transfer";
+import { uploadMultipartToS3 } from "@/features/upload/s3-client";
+import type {
+	ExpiryDays,
+	Mode,
+	UploadEntry,
+} from "@/features/upload/types";
 
 type StartUploadInput = {
-	mode: UploadMode;
-	expiryDays: UploadExpiryDays;
+	mode: Mode;
+	expiryDays: ExpiryDays;
 	recipientEmail?: string;
 	title?: string;
 	message?: string;

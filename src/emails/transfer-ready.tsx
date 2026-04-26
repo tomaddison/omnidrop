@@ -10,7 +10,7 @@ import {
 	Tailwind,
 	Text,
 } from "@react-email/components";
-import { formatBytes, formatExpiryDate, pluralizeFiles } from "#/lib/format";
+import { formatBytes, formatExpiryDate, pluralizeFiles } from "@/lib/format";
 
 type TransferReadyEmailProps = {
 	senderEmail: string;

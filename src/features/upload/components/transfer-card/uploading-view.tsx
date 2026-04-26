@@ -1,7 +1,9 @@
 import { useRef } from "react";
-import { Button } from "#/components/ui/button";
-import { CircularProgress } from "#/components/ui/circular-progress";
-import { formatBytes } from "#/lib/format";
+import { Button } from "@/components/ui/button";
+import { CircularProgress } from "@/components/ui/circular-progress";
+import { formatBytes } from "@/lib/format";
+import type { EtaSample } from "../../types";
+import { computeEta, ETA_WINDOW_MS, formatTimeRemaining } from "../../utils";
 
 type UploadingViewProps = {
 	progress: number;
@@ -13,14 +15,6 @@ type UploadingViewProps = {
 	onRetry: () => void;
 };
 
-function formatTimeRemaining(ms: number): string {
-	const secs = Math.round(ms / 1000);
-	if (secs < 60)
-		return `About ${secs} second${secs !== 1 ? "s" : ""} remaining`;
-	const mins = Math.round(secs / 60);
-	return `About ${mins} minute${mins !== 1 ? "s" : ""} remaining`;
-}
-
 export function UploadingView({
 	progress,
 	bytesLoaded,
@@ -30,14 +24,23 @@ export function UploadingView({
 	onCancel,
 	onRetry,
 }: UploadingViewProps) {
-	const startTimeRef = useRef<number>(Date.now());
+	const samplesRef = useRef<EtaSample[]>([]);
+	const lastBytesRef = useRef<number>(-1);
 
-	const timeRemaining = (() => {
-		if (progress <= 2 || progress >= 100) return null;
-		const elapsed = Date.now() - startTimeRef.current;
-		const rate = progress / elapsed;
-		return formatTimeRemaining((100 - progress) / rate);
-	})();
+	if (bytesLoaded !== lastBytesRef.current) {
+		const now = Date.now();
+		const samples = samplesRef.current;
+		samples.push({ t: now, bytes: bytesLoaded });
+		const cutoff = now - ETA_WINDOW_MS;
+		while (samples.length > 1 && samples[0].t < cutoff) samples.shift();
+		lastBytesRef.current = bytesLoaded;
+	}
+
+	const etaMs =
+		progress >= 100
+			? null
+			: computeEta(samplesRef.current, bytesLoaded, totalBytes);
+	const timeRemaining = etaMs !== null ? formatTimeRemaining(etaMs) : null;
 
 	if (error) {
 		return (

@@ -1,6 +1,5 @@
 import { Tabs } from "@base-ui/react/tabs";
-
-export type Mode = "link" | "email";
+import type { Mode } from "@/features/upload/types";
 
 type TabSwitcherProps = {
 	mode: Mode;

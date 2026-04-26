@@ -1,12 +1,12 @@
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useState } from "react";
-import { Button } from "#/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
 	InputOTP,
 	InputOTPGroup,
 	InputOTPSlot,
-} from "#/components/ui/input-otp";
-import { verifyLoginOtp } from "#/features/authentication/data/server/verify-otp";
+} from "@/components/ui/input-otp";
+import { verifyLoginOtp } from "@/features/authentication/data/server/verify-otp";
 
 const OTP_LENGTH = 6;
 

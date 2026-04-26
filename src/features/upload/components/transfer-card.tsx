@@ -1,19 +1,19 @@
 import { useRef, useState } from "react";
-import { OtpInput } from "#/features/authentication/components/otp-input";
+import { OtpInput } from "@/features/authentication/components/otp-input";
 import {
 	Turnstile,
 	type TurnstileHandle,
-} from "#/features/authentication/components/turnstile";
-import { loginWithOtp } from "#/features/authentication/data/server/login-with-otp";
-import { useAuth } from "#/features/authentication/provider";
-import { useBlockUnload } from "#/features/upload/hooks/use-block-unload";
-import { useFilePickers } from "#/features/upload/hooks/use-file-pickers";
-import { useTransferForm } from "#/features/upload/hooks/use-transfer-form";
-import { useUpload } from "#/features/upload/hooks/use-upload";
-import type { UploadEntry } from "#/features/upload/types";
+} from "@/features/authentication/components/turnstile";
+import { loginWithOtp } from "@/features/authentication/data/server/login-with-otp";
+import { useAuth } from "@/features/authentication/provider";
+import { useBlockUnload } from "@/features/upload/hooks/use-block-unload";
+import { useFilePickers } from "@/features/upload/hooks/use-file-pickers";
+import { useTransferForm } from "@/features/upload/hooks/use-transfer-form";
+import { useUpload } from "@/features/upload/hooks/use-upload";
+import type { Mode, UploadEntry } from "@/features/upload/types";
 import { EXPIRY_OPTIONS, ExpiryPopover } from "./expiry/expiry-popover";
 import { SuccessView } from "./transfer-card/success-view";
-import { type Mode, TabSwitcher } from "./transfer-card/tab-switcher";
+import { TabSwitcher } from "./transfer-card/tab-switcher";
 import { TransferForm } from "./transfer-card/transfer-form";
 import { UploadingView } from "./transfer-card/uploading-view";
 

@@ -3,8 +3,8 @@ import {
 	fileExtensionLabel,
 	fileKindLabel,
 	inferFileKind,
-} from "#/lib/format";
-import { cn } from "#/lib/utils";
+} from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const KIND_STYLES: Record<FileKind, { bg: string; fg: string }> = {
 	audio: { bg: "rgba(134, 239, 172, 0.14)", fg: "#86efac" },

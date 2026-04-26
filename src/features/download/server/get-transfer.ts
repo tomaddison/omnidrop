@@ -2,7 +2,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createServiceClient } from "../../../../supabase/utils/server";
+import { createServiceClient } from "~/supabase/utils/server";
 import { assertReady } from "./assert-ready";
 
 const schema = z.object({ slug: z.string().min(1).max(64) });

@@ -17,7 +17,7 @@ vi.mock("@tanstack/react-start", () => ({
 }));
 
 vi.mock("resend", () => ({ Resend: vi.fn() }));
-vi.mock("#/emails/transfer-ready", () => ({ TransferReadyEmail: vi.fn() }));
+vi.mock("@/emails/transfer-ready", () => ({ TransferReadyEmail: vi.fn() }));
 
 vi.mock("../../../../../../supabase/utils/server-auth", () => ({
 	createAuthClient: () => ({ auth: { getClaims: getClaimsMock } }),

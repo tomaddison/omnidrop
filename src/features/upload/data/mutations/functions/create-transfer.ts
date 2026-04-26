@@ -12,9 +12,9 @@ import {
 	MAX_TRANSFER_LABEL,
 	PART_SIZE,
 	validateRelativePath,
-} from "#/features/upload/utils";
-import { createServiceClient } from "../../../../../../supabase/utils/server";
-import { createAuthClient } from "../../../../../../supabase/utils/server-auth";
+} from "@/features/upload/utils";
+import { createServiceClient } from "~/supabase/utils/server";
+import { createAuthClient } from "~/supabase/utils/server-auth";
 
 const PRESIGNED_PART_TTL_SECONDS = 60 * 60;
 const MONTHLY_TRANSFER_LIMIT = 20;

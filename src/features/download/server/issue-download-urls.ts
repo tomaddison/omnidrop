@@ -2,7 +2,7 @@ import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createServiceClient } from "../../../../supabase/utils/server";
+import { createServiceClient } from "~/supabase/utils/server";
 import { assertReady } from "./assert-ready";
 
 const schema = z.object({

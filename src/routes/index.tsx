@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Stage } from "#/features/branding/stage";
-import { TopBar } from "#/features/branding/top-bar";
-import { absoluteUrl, getOrigin, SITE } from "#/features/seo/config";
-import { jsonLdScript, webApplicationSchema } from "#/features/seo/schema";
-import { TransferCard } from "#/features/upload/components/transfer-card";
-import type { UploadEntry } from "#/features/upload/types";
-import { walkDataTransferItems } from "#/features/upload/utils";
+import { Stage } from "@/features/branding/stage";
+import { TopBar } from "@/features/branding/top-bar";
+import { absoluteUrl, getOrigin, SITE } from "@/features/seo/config";
+import { jsonLdScript, webApplicationSchema } from "@/features/seo/schema";
+import { TransferCard } from "@/features/upload/components/transfer-card";
+import type { UploadEntry } from "@/features/upload/types";
+import { walkDataTransferItems } from "@/features/upload/utils";
 
 const LANDING_TITLE = `${SITE.name} | ${SITE.tagline}`;
 

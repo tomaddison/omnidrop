@@ -1,14 +1,13 @@
 import { Clock01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
-import { Button } from "#/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-} from "#/components/ui/dropdown-menu";
-import { HI } from "#/components/ui/hi";
-
-export type ExpiryDays = 1 | 3 | 7;
+} from "@/components/ui/dropdown-menu";
+import { HI } from "@/components/ui/hi";
+import type { ExpiryDays } from "@/features/upload/types";
 
 type Option = {
 	id: ExpiryDays;

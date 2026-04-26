@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { MAX_TOTAL_BYTES } from "#/features/upload/utils";
+import { MAX_TOTAL_BYTES } from "@/features/upload/utils";
 
 vi.mock("@tanstack/react-start", () => ({
 	createServerFn: () => ({

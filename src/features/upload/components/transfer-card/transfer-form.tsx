@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { ScrollArea } from "#/components/ui/scroll-area";
-import { TooltipProvider } from "#/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { TransferFormProvider } from "./form-context";
 import { FormFields } from "./form-fields";
 import { FormFiles } from "./form-files";

@@ -1,4 +1,4 @@
-import { MAX_CONCURRENT_PARTS, PART_SIZE } from "#/features/upload/utils";
+import { MAX_CONCURRENT_PARTS, PART_SIZE } from "@/features/upload/utils";
 
 export type UploadedPart = { ETag: string; PartNumber: number };
 

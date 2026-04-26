@@ -7,7 +7,7 @@ import {
 	useMemo,
 	useState,
 } from "react";
-import { browserClient } from "../../../supabase/utils/client";
+import { browserClient } from "~/supabase/utils/client";
 
 export type AuthUser = {
 	id: string;

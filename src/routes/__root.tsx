@@ -5,14 +5,14 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 
-import { AuthProvider } from "#/features/authentication/provider";
-import { Footer } from "#/features/branding/footer";
-import { absoluteUrl, getOrigin, SITE } from "#/features/seo/config";
+import { AuthProvider } from "@/features/authentication/provider";
+import { Footer } from "@/features/branding/footer";
+import { absoluteUrl, getOrigin, SITE } from "@/features/seo/config";
 import {
 	jsonLdScript,
 	organisationSchema,
 	websiteSchema,
-} from "#/features/seo/schema";
+} from "@/features/seo/schema";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({

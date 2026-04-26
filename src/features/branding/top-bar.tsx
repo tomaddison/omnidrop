@@ -1,6 +1,6 @@
-import { Button } from "#/components/ui/button";
-import { useSignOut } from "#/features/authentication/hooks/use-sign-out";
-import { useAuth } from "#/features/authentication/provider";
+import { Button } from "@/components/ui/button";
+import { useSignOut } from "@/features/authentication/hooks/use-sign-out";
+import { useAuth } from "@/features/authentication/provider";
 
 export function TopBar() {
 	const { user } = useAuth();

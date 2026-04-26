@@ -1,8 +1,8 @@
 import { Folder01Icon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import type { Ref } from "react";
-import { Button } from "#/components/ui/button";
-import { HI } from "#/components/ui/hi";
-import type { UploadEntry } from "#/features/upload/types";
+import { Button } from "@/components/ui/button";
+import { HI } from "@/components/ui/hi";
+import type { UploadEntry } from "@/features/upload/types";
 import { FileList } from "./file-list";
 import { useTransferFormContext } from "./form-context";
 

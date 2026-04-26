@@ -2,19 +2,19 @@ import { Clock01Icon, Folder01Icon } from "@hugeicons/core-free-icons";
 import { createFileRoute } from "@tanstack/react-router";
 import JSZip from "jszip";
 import { useState } from "react";
-import { Badge } from "#/components/ui/badge";
-import { Button } from "#/components/ui/button";
-import { FileGlyph } from "#/components/ui/file-glyph";
-import { HI } from "#/components/ui/hi";
-import { TopBar } from "#/features/branding/top-bar";
-import { getTransferFn } from "#/features/download/server/get-transfer";
-import { issueDownloadUrlsFn } from "#/features/download/server/issue-download-urls";
-import { groupByTopFolder } from "#/lib/file-groups";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { FileGlyph } from "@/components/ui/file-glyph";
+import { HI } from "@/components/ui/hi";
+import { TopBar } from "@/features/branding/top-bar";
+import { getTransferFn } from "@/features/download/server/get-transfer";
+import { issueDownloadUrlsFn } from "@/features/download/server/issue-download-urls";
+import { groupByTopFolder } from "@/lib/file-groups";
 import {
 	formatBytes,
 	formatExpiryRelative,
 	pluralizeFiles,
-} from "#/lib/format";
+} from "@/lib/format";
 
 function pluralizeItems(count: number, word: "item" | "folder"): string {
 	return count === 1 ? word : `${word}s`;

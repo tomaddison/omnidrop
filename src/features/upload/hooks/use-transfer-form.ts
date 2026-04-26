@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import type { ExpiryDays } from "#/features/upload/components/expiry/expiry-popover";
-import type { Mode } from "#/features/upload/components/transfer-card/tab-switcher";
 import {
 	type FormError,
 	formSchema,
-} from "#/features/upload/components/transfer-card/validation";
-import type { UploadEntry } from "#/features/upload/types";
+} from "@/features/upload/components/transfer-card/validation";
+import type {
+	ExpiryDays,
+	Mode,
+	UploadEntry,
+} from "@/features/upload/types";
 import {
 	MAX_TOTAL_BYTES,
 	MAX_TRANSFER_LABEL,
 	titleFromEntries,
-} from "#/features/upload/utils";
+} from "@/features/upload/utils";
 
 type UseTransferFormOptions = {
 	mode: Mode;

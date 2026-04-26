@@ -1,5 +1,5 @@
-import { MAX_TRANSFER_GB } from "#/features/upload/utils";
-import { cn } from "#/lib/utils";
+import { MAX_TRANSFER_GB } from "@/features/upload/utils";
+import { cn } from "@/lib/utils";
 
 export function HeroCopy({ className }: { className?: string }) {
 	return (

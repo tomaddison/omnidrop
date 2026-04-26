@@ -1,12 +1,12 @@
 import { AlertCircleIcon } from "@hugeicons/core-free-icons";
 import { type ReactNode, type RefObject, useState } from "react";
-import { Button } from "#/components/ui/button";
-import { HI } from "#/components/ui/hi";
+import { Button } from "@/components/ui/button";
+import { HI } from "@/components/ui/hi";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-} from "#/components/ui/popover";
+} from "@/components/ui/popover";
 import { useTransferFormContext } from "./form-context";
 import type { FormError } from "./validation";
 

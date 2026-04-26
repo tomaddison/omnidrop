@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
-import { browserClient } from "../../../../supabase/utils/client";
+import { browserClient } from "~/supabase/utils/client";
 
 export function useSignOut() {
 	const router = useRouter();

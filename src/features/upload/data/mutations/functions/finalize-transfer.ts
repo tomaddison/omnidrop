@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { Resend } from "resend";
 import { z } from "zod";
-import { TransferReadyEmail } from "#/emails/transfer-ready";
-import { createServiceClient } from "../../../../../../supabase/utils/server";
-import { createAuthClient } from "../../../../../../supabase/utils/server-auth";
+import { TransferReadyEmail } from "@/emails/transfer-ready";
+import { createServiceClient } from "~/supabase/utils/server";
+import { createAuthClient } from "~/supabase/utils/server-auth";
 
 const schema = z.object({
 	transferId: z.string().uuid(),

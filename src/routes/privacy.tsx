@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { LegalPage } from "#/features/branding/legal-page";
-import { absoluteUrl, getOrigin } from "#/features/seo/config";
+import { LegalPage } from "@/features/branding/legal-page";
+import { absoluteUrl, getOrigin } from "@/features/seo/config";
 
 const TITLE = "Privacy Policy · Omnidrop";
 const DESCRIPTION =

@@ -7,8 +7,8 @@ import {
 } from "@aws-sdk/client-s3";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createServiceClient } from "../../../../../../supabase/utils/server";
-import { createAuthClient } from "../../../../../../supabase/utils/server-auth";
+import { createServiceClient } from "~/supabase/utils/server";
+import { createAuthClient } from "~/supabase/utils/server-auth";
 
 const schema = z.object({
 	transferId: z.string().uuid(),

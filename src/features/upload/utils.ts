@@ -1,5 +1,5 @@
-import limits from "../../../limits.json";
-import type { UploadEntry } from "./types";
+import limits from "~/limits.json";
+import type { EtaSample, UploadEntry } from "./types";
 
 // Source of truth: /limits.json (also read by Terraform for the S3 bucket policy).
 export const MAX_TRANSFER_GB = limits.maxTransferGb;
@@ -146,6 +146,34 @@ async function readAllChildren(
 function basename(path: string): string {
 	const i = path.lastIndexOf("/");
 	return i === -1 ? path : path.slice(i + 1);
+}
+
+export const ETA_WINDOW_MS = 10_000;
+export const ETA_MIN_SAMPLE_MS = 3_000;
+
+export function formatTimeRemaining(ms: number): string {
+	const secs = Math.round(ms / 1000);
+	if (secs < 60)
+		return `About ${secs} second${secs !== 1 ? "s" : ""} remaining`;
+	const mins = Math.round(secs / 60);
+	return `About ${mins} minute${mins !== 1 ? "s" : ""} remaining`;
+}
+
+export function computeEta(
+	samples: EtaSample[],
+	bytesLoaded: number,
+	totalBytes: number,
+): number | null {
+	if (samples.length < 2) return null;
+	const oldest = samples[0];
+	const latest = samples[samples.length - 1];
+	const span = latest.t - oldest.t;
+	if (span < ETA_MIN_SAMPLE_MS) return null;
+	const rate = (latest.bytes - oldest.bytes) / span;
+	if (rate <= 0) return null;
+	const remaining = totalBytes - bytesLoaded;
+	if (remaining <= 0) return null;
+	return remaining / rate;
 }
 
 export function titleFromEntries(entries: UploadEntry[]): string {
