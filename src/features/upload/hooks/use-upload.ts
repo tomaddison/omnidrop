@@ -3,11 +3,7 @@ import { completeMultipartFn } from "@/features/upload/data/mutations/functions/
 import { createTransferFn } from "@/features/upload/data/mutations/functions/create-transfer";
 import { finalizeTransferFn } from "@/features/upload/data/mutations/functions/finalize-transfer";
 import { uploadMultipartToS3 } from "@/features/upload/s3-client";
-import type {
-	ExpiryDays,
-	Mode,
-	UploadEntry,
-} from "@/features/upload/types";
+import type { ExpiryDays, Mode, UploadEntry } from "@/features/upload/types";
 
 type StartUploadInput = {
 	mode: Mode;

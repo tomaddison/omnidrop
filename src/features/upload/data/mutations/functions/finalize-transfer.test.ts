@@ -29,6 +29,10 @@ vi.mock("../../../../../../supabase/utils/server", () => ({
 
 import { finalizeTransferFn } from "./finalize-transfer";
 
+const callFinalize = finalizeTransferFn as (
+	input: typeof VALID_INPUT,
+) => Promise<unknown>;
+
 function queryChain(value: unknown) {
 	const chain: Record<string, unknown> = {};
 	for (const m of ["select", "update", "eq", "single"]) {
@@ -81,9 +85,7 @@ describe("finalizeTransferFn handler", () => {
 			queryChain({ data: BASE_TRANSFER, error: null }),
 		);
 
-		await expect((finalizeTransferFn as Function)(VALID_INPUT)).rejects.toThrow(
-			/not authorized/i,
-		);
+		await expect(callFinalize(VALID_INPUT)).rejects.toThrow(/not authorized/i);
 	});
 
 	it("returns success without resending when already finalized", async () => {
@@ -92,7 +94,7 @@ describe("finalizeTransferFn handler", () => {
 			.mockReturnValueOnce(queryChain({ data: BASE_TRANSFER, error: null }))
 			.mockReturnValueOnce(queryChain({ data: [], error: null }));
 
-		const result = await (finalizeTransferFn as Function)(VALID_INPUT);
+		const result = await callFinalize(VALID_INPUT);
 		expect(result).toEqual({ success: true });
 	});
 
@@ -102,7 +104,7 @@ describe("finalizeTransferFn handler", () => {
 			queryChain({ data: null, error: { message: "not found" } }),
 		);
 
-		await expect((finalizeTransferFn as Function)(VALID_INPUT)).rejects.toThrow(
+		await expect(callFinalize(VALID_INPUT)).rejects.toThrow(
 			/transfer not found/i,
 		);
 	});
@@ -110,8 +112,6 @@ describe("finalizeTransferFn handler", () => {
 	it("throws when there is no signed-in user", async () => {
 		getClaimsMock.mockResolvedValue(claimsFor(null));
 
-		await expect((finalizeTransferFn as Function)(VALID_INPUT)).rejects.toThrow(
-			/session expired/i,
-		);
+		await expect(callFinalize(VALID_INPUT)).rejects.toThrow(/session expired/i);
 	});
 });

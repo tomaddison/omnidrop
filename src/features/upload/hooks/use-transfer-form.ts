@@ -3,11 +3,7 @@ import {
 	type FormError,
 	formSchema,
 } from "@/features/upload/components/transfer-card/validation";
-import type {
-	ExpiryDays,
-	Mode,
-	UploadEntry,
-} from "@/features/upload/types";
+import type { ExpiryDays, Mode, UploadEntry } from "@/features/upload/types";
 import {
 	MAX_TOTAL_BYTES,
 	MAX_TRANSFER_LABEL,

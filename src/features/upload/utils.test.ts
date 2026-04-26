@@ -67,8 +67,7 @@ describe("validateRelativePath", () => {
 	});
 
 	it("rejects depth greater than 32", () => {
-		const deep =
-			Array.from({ length: 33 }, (_, i) => `d${i}`).join("/") + "/file.txt";
+		const deep = `${Array.from({ length: 33 }, (_, i) => `d${i}`).join("/")}/file.txt`;
 		expect(validateRelativePath(deep).ok).toBe(false);
 	});
 
