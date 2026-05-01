@@ -77,18 +77,13 @@ function DownloadPage() {
 
 			if (urls.length === 1) {
 				const { url, name } = urls[0];
-				const response = await fetch(url);
-				if (!response.ok) throw new Error(`Failed to fetch ${name}`);
-				const blob = await response.blob();
 				const filename = name.split("/").pop() ?? name;
-				const blobUrl = URL.createObjectURL(blob);
 				const link = document.createElement("a");
-				link.href = blobUrl;
+				link.href = url;
 				link.download = filename;
 				document.body.appendChild(link);
 				link.click();
 				document.body.removeChild(link);
-				URL.revokeObjectURL(blobUrl);
 			} else {
 				const files = await Promise.all(
 					urls.map(async ({ url, name }) => {
